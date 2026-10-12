@@ -72,6 +72,46 @@ java -jar target/triagem-chamados-0.0.1-SNAPSHOT.jar
 
 Com a aplicação iniciada, o endpoint de verificação de saúde responde em `http://localhost:8080/health` e retorna `OK`.
 
+## API de chamados
+
+Todas as rotas abaixo usam o prefixo `/api/chamados`. Os endpoints de listagem retornam páginas; use `page` (começando em zero), `size` e `sort` para controlar paginação e ordenação. A listagem geral aceita os filtros opcionais `status`, `telefone` (busca parcial), `prioridadeFinal` e `responsavel` (busca parcial).
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/api/chamados` | Cria chamado com `telefoneCliente` obrigatório e `nomeCliente` e `prioridadeSugerida` opcionais. |
+| `GET` | `/api/chamados` | Lista chamados com filtros e paginação. |
+| `GET` | `/api/chamados/{id}` | Busca um chamado pelo ID. |
+| `GET` | `/api/chamados/abertos` | Lista chamados nos status `ABERTO`, `EM_ATENDIMENTO` e `AGUARDANDO_USUARIO`. |
+| `GET` | `/api/chamados/cliente/{telefone}` | Lista chamados do cliente com o telefone informado. |
+| `PATCH` | `/api/chamados/{id}/status` | Altera para `ABERTO`, `EM_ATENDIMENTO` ou `AGUARDANDO_USUARIO`. |
+| `PATCH` | `/api/chamados/{id}/prioridade` | Define a prioridade final em `prioridadeFinal`. |
+| `PATCH` | `/api/chamados/{id}/responsavel` | Define o técnico em `responsavel`. |
+| `POST` | `/api/chamados/{id}/encerrar` | Encerra o chamado e exige `causaReal`. |
+
+Exemplos de corpos JSON:
+
+```json
+{ "telefoneCliente": "11999990000", "nomeCliente": "Cliente", "prioridadeSugerida": "ALTA" }
+```
+
+```json
+{ "status": "EM_ATENDIMENTO" }
+```
+
+```json
+{ "prioridadeFinal": "MEDIA" }
+```
+
+```json
+{ "responsavel": "Técnico 1" }
+```
+
+```json
+{ "causaReal": "Falha no equipamento substituído" }
+```
+
+A prioridade sugerida é persistida separadamente da prioridade final. Chamados encerrados não podem ser alterados; um novo chamado do mesmo telefone recebe o ID do chamado anterior quando o registro mais recente do cliente está encerrado. A causa real e a data de encerramento do chamado anterior permanecem preservadas.
+
 ## Como testar
 
 Execute a suíte de testes a partir do diretório `backend`:
