@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import br.com.sistema.triagem.model.entity.Chamado;
+import br.com.sistema.triagem.dto.ChamadoRequests.CriarChamadoRequest;
 import br.com.sistema.triagem.repository.ChamadoRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,8 @@ class ChamadoServiceTest {
         when(repository.save(any(Chamado.class))).thenAnswer(invocation -> invocation.getArgument(0));
         ChamadoService service = new ChamadoService(repository);
 
-        Chamado chamado = service.criarChamado("11999990000", "Cliente", "ALTA");
+        Chamado chamado = service.criarChamado(new CriarChamadoRequest(
+                "11999990000", "Cliente", "ALTA", null, null, null, null, null, null));
 
         assertEquals("ABERTO", chamado.getStatus());
         assertEquals("ALTA", chamado.getPrioridadeSugerida());

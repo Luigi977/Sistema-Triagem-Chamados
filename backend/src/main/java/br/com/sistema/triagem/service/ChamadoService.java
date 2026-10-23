@@ -1,6 +1,8 @@
 package br.com.sistema.triagem.service;
 
 import br.com.sistema.triagem.model.entity.Chamado;
+import br.com.sistema.triagem.dto.ChamadoRequests.CriarChamadoRequest;
+import br.com.sistema.triagem.dto.ChamadoRequests.AtualizarDetalhesRequest;
 import br.com.sistema.triagem.repository.ChamadoRepository;
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -22,18 +24,29 @@ public class ChamadoService {
     private static final Set<String> STATUS_ABERTOS = Set.of(
             "ABERTO", "EM_ATENDIMENTO", "AGUARDANDO_USUARIO");
 
+    private static final Set<String> PRIORIDADES = Set.of("BAIXA", "MEDIA", "ALTA", "CRITICA");
+    private static final Set<String> NATUREZAS = Set.of("INCIDENTE", "REQUISICAO", "DUVIDA");
+    private static final Set<String> EQUIPES = Set.of("N1", "N2");
+    private static final Set<String> CANAIS = Set.of("WHATSAPP", "MANUAL");
+
     private final ChamadoRepository chamadoRepository;
 
     public ChamadoService(ChamadoRepository chamadoRepository) {
         this.chamadoRepository = chamadoRepository;
     }
 
-    public Chamado criarChamado(String telefoneCliente, String nomeCliente, String prioridadeSugerida) {
-        String telefone = required(telefoneCliente, "telefoneCliente", 30);
+    public Chamado criarChamado(CriarChamadoRequest request) {
+        String telefone = required(request.telefoneCliente(), "telefoneCliente", 30);
         Chamado chamado = new Chamado();
         chamado.setTelefoneCliente(telefone);
-        chamado.setNomeCliente(optional(nomeCliente, "nomeCliente", 150));
-        chamado.setPrioridadeSugerida(optional(prioridadeSugerida, "prioridadeSugerida", 20));
+        chamado.setNomeCliente(optional(request.nomeCliente(), "nomeCliente", 150));
+        chamado.setPrioridadeSugerida(optionalCategory(request.prioridadeSugerida(), "prioridadeSugerida", PRIORIDADES));
+        chamado.setResumo(optional(request.resumo(), "resumo", 200));
+        chamado.setDescricao(optional(request.descricao(), "descricao", 10000));
+        chamado.setNatureza(optionalCategory(request.natureza(), "natureza", NATUREZAS));
+        chamado.setSetor(optional(request.setor(), "setor", 150));
+        chamado.setCanal(request.canal() == null ? "MANUAL" : category(request.canal(), "canal", CANAIS));
+        chamado.setEquipe(optionalCategory(request.equipe(), "equipe", EQUIPES));
         chamado.setStatus("ABERTO");
         chamado.setDataAbertura(LocalDateTime.now());
 
@@ -53,7 +66,7 @@ public class ChamadoService {
         }
 
         String telefoneFiltro = optional(telefone);
-        String prioridadeFiltro = optional(prioridadeFinal);
+        String prioridadeFiltro = optionalCategory(prioridadeFinal, "prioridadeFinal", PRIORIDADES);
         String responsavelFiltro = optional(responsavel);
 
         Specification<Chamado> specification = (root, query, builder) -> builder.conjunction();
@@ -117,7 +130,7 @@ public class ChamadoService {
     public Chamado alterarPrioridadeFinal(Long id, String prioridadeFinal) {
         Chamado chamado = buscarPorId(id);
         validarNaoEncerrado(chamado);
-        chamado.setPrioridadeFinal(required(prioridadeFinal, "prioridadeFinal", 20));
+        chamado.setPrioridadeFinal(category(prioridadeFinal, "prioridadeFinal", PRIORIDADES));
         return chamadoRepository.save(chamado);
     }
 
@@ -128,13 +141,34 @@ public class ChamadoService {
         return chamadoRepository.save(chamado);
     }
 
-    public Chamado encerrarChamado(Long id, String causaReal) {
+    public Chamado atualizarDetalhes(Long id, AtualizarDetalhesRequest request) {
+        Chamado chamado = buscarPorId(id);
+        validarNaoEncerrado(chamado);
+        if (request.resumo() != null) chamado.setResumo(required(request.resumo(), "resumo", 200));
+        if (request.descricao() != null) chamado.setDescricao(required(request.descricao(), "descricao", 10000));
+        if (request.natureza() != null) chamado.setNatureza(category(request.natureza(), "natureza", NATUREZAS));
+        if (request.setor() != null) chamado.setSetor(required(request.setor(), "setor", 150));
+        if (request.canal() != null) chamado.setCanal(category(request.canal(), "canal", CANAIS));
+        return chamadoRepository.save(chamado);
+    }
+
+    public Chamado alterarEquipe(Long id, String equipe) {
+        Chamado chamado = buscarPorId(id);
+        validarNaoEncerrado(chamado);
+        chamado.setEquipe(category(equipe, "equipe", EQUIPES));
+        return chamadoRepository.save(chamado);
+    }
+
+    public Chamado encerrarChamado(Long id, String causaReal, String solucaoAplicada) {
         Chamado chamado = buscarPorId(id);
         if ("ENCERRADO".equals(chamado.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "O chamado já está encerrado.");
         }
 
-        chamado.setCausaReal(required(causaReal, "causaReal"));
+        String causa = required(causaReal, "causaReal", 10000);
+        String solucao = required(solucaoAplicada, "solucaoAplicada", 10000);
+        chamado.setCausaReal(causa);
+        chamado.setSolucaoAplicada(solucao);
         chamado.setStatus("ENCERRADO");
         chamado.setDataEncerramento(LocalDateTime.now());
         return chamadoRepository.save(chamado);
@@ -145,6 +179,19 @@ public class ChamadoService {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Chamado encerrado não pode ser alterado. Abra um novo chamado.");
         }
+    }
+
+    private static String optionalCategory(String value, String field, Set<String> values) {
+        return value == null ? null : category(value, field, values);
+    }
+
+    private static String category(String value, String field, Set<String> values) {
+        String normalized = required(value, field).toUpperCase(Locale.ROOT);
+        if (!values.contains(normalized)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    field + " inválido. Valores permitidos: " + values);
+        }
+        return normalized;
     }
 
     private static String normalizeStatus(String status) {
