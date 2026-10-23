@@ -122,3 +122,105 @@ mvn test
 ```
 
 O teste de contexto usa um banco H2 em memória, portanto não precisa de uma instância do PostgreSQL para ser executado.
+
+## Mapa de funcionalidades
+
+Consulte o [mapa de funcionalidades](docs/mapa-de-funcionalidades.md) para ver os requisitos das telas e diagramas, a situação atual e a ordem sugerida de implementação.
+
+## Arquivos que devem ficar fora do GitHub
+
+Revisão do checkout atual e das regras de `.gitignore`. O código da IA deve ser versionado; dados privados, credenciais e artefatos gerados precisam de tratamento diferente. Não há motivo para ignorar a pasta `ia/` inteira.
+
+### Achados atuais
+
+- `dataset/original/`, `ia/data/raw/` e `ia/models/` já são ignorados, preservando `.gitkeep`.
+- `dataset/anonymized/`, `dataset/labeled/`, `ia/data/processed/` e `ia/data/test/` são ignoradas integralmente. Seus arquivos `.gitkeep` foram removidos do versionamento; arquivos locais são preservados.
+- `.env` e `.env.*` já são ignorados; `.env.example` é permitido e deve conter apenas nomes e exemplos sem segredo.
+- `backend/target/`, dependências/build do frontend, ambientes virtuais Python e alguns caches já são ignorados.
+- Os scripts de IA e `requirements.txt` estão rastreados e vazios. Isso é estrutura de código, não vazamento de modelos ou datasets.
+- No inventário atual não há datasets ou pesos de modelos rastreados. Os artefatos Java encontrados em `backend/target/` são ignorados.
+- Esta revisão de caminhos e configuração não equivale a uma varredura completa de segredos nem à auditoria do histórico Git. `.gitignore` não detecta segredos escritos dentro de código/documentos.
+
+### Não publicar com dados reais ou segredos
+
+| Caminho / tipo | Motivo e tratamento |
+| --- | --- |
+| `.env`, `.env.local`, `.env.production` e equivalentes | Podem conter senhas, tokens e URLs privadas; usar configuração segura do ambiente |
+| Chaves privadas, arquivos de credenciais, keystores com chave privada | Acesso a serviços; manter em gerenciador de segredos, nunca em exemplos ou documentação |
+| Sessões, tokens, QR codes de pareamento e armazenamento de autenticação do WhatsApp/Evolution API | Podem permitir acesso à conta; usar volumes privados fora do checkout |
+| `dataset/original/**` e `ia/data/raw/**` | Conversas, nomes, telefones e detalhes internos; armazenamento privado com acesso controlado |
+| `dataset/labeled/**` | Rotular não remove dados pessoais; tratar como dados privados por padrão |
+| `dataset/anonymized/**` | O nome da pasta não comprova anonimização; revisar risco de reidentificação e autorização antes de qualquer publicação |
+| `ia/data/processed/**` e `ia/data/test/**` | Transformação ou divisão em teste não elimina dados sensíveis |
+| Dumps PostgreSQL, backups, exports CSV/JSON, anexos de chamados e capturas com dados reais | Podem reproduzir dados de clientes; manter fora do Git e aplicar controles de armazenamento |
+| Logs de aplicação/IA, traces e respostas de LLM contendo conversas | Podem registrar dados pessoais e tokens; reduzir conteúdo e armazenar fora do checkout |
+| Mapeamentos usados na anonimização | Permitem reidentificação; guardar separadamente dos datasets e fora do Git |
+
+### Artefatos gerados: manter fora do Git comum
+
+Estes itens não são necessariamente secretos, mas não devem acompanhar o código neste projeto. Se houver necessidade de distribuir um modelo público, revisar licença e conteúdo e usar um registro de modelos ou mecanismo adequado de artefatos.
+
+| Caminho / exemplo | Tratamento |
+| --- | --- |
+| `ia/models/**` | Pesos, checkpoints, tokenizadores treinados e vetorizadores: `.pkl`, `.pickle`, `.joblib`, `.pt`, `.pth`, `.ckpt`, `.h5`, `.keras`, `.onnx`, `.safetensors`, `.bin` |
+| `ia/checkpoints/`, `ia/runs/`, `ia/outputs/`, `ia/mlruns/`, `ia/wandb/` | Treinamentos, rastreamento de experimentos e saídas brutas; podem também conter dados privados |
+| `ia/.cache/`, caches de Hugging Face/Transformers/Torch | Downloads e caches reconstituíveis |
+| `.venv/`, `venv/`, `__pycache__/`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `.ipynb_checkpoints/` | Dependências, caches e cópias automáticas |
+| `backend/target/`, `*.class`, `frontend/node_modules/`, `frontend/dist/`, `frontend/.vite/` | Compilações e dependências já protegidas pelas regras atuais |
+| Arquivos de cobertura, logs e temporários locais | Gerar em CI ou localmente; publicar relatórios sanitizados somente quando houver propósito |
+| Diretórios locais de banco, uploads, backups e sessões de integração | Definir caminhos explícitos e ignorá-los antes de usá-los |
+
+Os caminhos de experimentos, sessões e uploads acima são exemplos futuros; não foram encontrados como implementação atual. Prefira ignorar diretórios de saída definidos em vez de todas as extensões `.json`, `.csv`, `.sql` ou `.bin` do repositório.
+
+### Arquivos que devem ir para o GitHub
+
+- `ia/train.py`, `ia/predict.py`, `ia/src/**` e testes da IA.
+- `ia/requirements.txt`, futuros manifests e lockfiles para reproduzir dependências.
+- Regras de classificação, matriz impacto × urgência, templates de prompt sem dados reais e contratos de entrada/saída.
+- Código Java/React, `pom.xml`, manifests, lockfiles e testes.
+- `database/migrations/**` e `database/schema/**` com estrutura e migrações, sem dumps de dados reais.
+- `.env.example` sem valores secretos e `application.properties` usando referências a variáveis.
+- `.gitkeep`, documentação, diagramas e telas com dados fictícios. As telas atuais indicam “Dados fictícios”; não assumir que futuras capturas também sejam fictícias.
+- Pequenas fixtures sintéticas, anonimizadas e autorizadas após revisão; preferir diretório explícito de fixtures para não abrir exceção ampla em datasets privados.
+- Relatórios de avaliação agregados, sem amostras privadas, e notebooks revisados com saídas sensíveis removidas.
+
+### Complemento recomendado ao `.gitignore`
+
+As quatro regras de datasets abaixo já foram aplicadas. As demais regras são recomendações para futuras saídas e caches e devem acompanhar os caminhos efetivamente escolhidos na implementação.
+
+```gitignore
+# Dados locais de IA: pastas integralmente fora do versionamento
+dataset/anonymized/
+dataset/labeled/
+ia/data/processed/
+ia/data/test/
+
+# Saídas de experimentos e caches
+ia/checkpoints/
+ia/runs/
+ia/outputs/
+ia/mlruns/
+ia/wandb/
+ia/.cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.ipynb_checkpoints/
+
+# Saídas locais
+*.log
+.coverage
+htmlcov/
+frontend/coverage/
+```
+
+Não ignorar globalmente `*.sql`: isso ocultaria migrações legítimas. Não ignorar globalmente `*.json`: isso ocultaria manifests e contratos. Certificados públicos também não são automaticamente segredos; chaves privadas são.
+
+### Verificação antes de um commit
+
+1. Conferir `git status --short` e `git diff --cached --stat`.
+2. Revisar o conteúdo de `git diff --cached`, especialmente exemplos, notebooks e configurações.
+3. Usar `git check-ignore -v caminho/do/arquivo` para confirmar a regra aplicada.
+4. Usar `git ls-files caminho/` para identificar dados já rastreados: adicionar regra ao `.gitignore` não os remove do índice nem do histórico.
+5. Se um segredo já tiver sido publicado, revogar/rotacionar a credencial. Remover o arquivo no próximo commit não desfaz a exposição anterior; limpeza de histórico exige ação separada e coordenada.
+
+Quando houver configuração local de ambiente em `/workspace/.cloud-setup`, ela fica fora da raiz deste repositório. Banco, caches e logs locais não devem ser copiados em bloco para o projeto.

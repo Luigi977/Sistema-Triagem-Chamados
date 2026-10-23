@@ -26,3 +26,9 @@ ia/data/raw/*
 !ia/data/raw/.gitkeep
 ia/models/*
 !ia/models/.gitkeep
+
+# Local datasets excluded entirely from version control
+dataset/anonymized/
+dataset/labeled/
+ia/data/processed/
+ia/data/test/
