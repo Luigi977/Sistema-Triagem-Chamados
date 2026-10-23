@@ -78,7 +78,7 @@ Todas as rotas abaixo usam o prefixo `/api/chamados`. Os endpoints de listagem r
 
 | Método | Rota | Descrição |
 | --- | --- | --- |
-| `POST` | `/api/chamados` | Cria chamado com `telefoneCliente` obrigatório e `nomeCliente` e `prioridadeSugerida` opcionais. |
+| `POST` | `/api/chamados` | Cria chamado com `telefoneCliente` obrigatório; aceita nome, prioridade sugerida, resumo, descrição, natureza, setor, canal e equipe opcionais. |
 | `GET` | `/api/chamados` | Lista chamados com filtros e paginação. |
 | `GET` | `/api/chamados/{id}` | Busca um chamado pelo ID. |
 | `GET` | `/api/chamados/abertos` | Lista chamados nos status `ABERTO`, `EM_ATENDIMENTO` e `AGUARDANDO_USUARIO`. |
@@ -86,7 +86,9 @@ Todas as rotas abaixo usam o prefixo `/api/chamados`. Os endpoints de listagem r
 | `PATCH` | `/api/chamados/{id}/status` | Altera para `ABERTO`, `EM_ATENDIMENTO` ou `AGUARDANDO_USUARIO`. |
 | `PATCH` | `/api/chamados/{id}/prioridade` | Define a prioridade final em `prioridadeFinal`. |
 | `PATCH` | `/api/chamados/{id}/responsavel` | Define o técnico em `responsavel`. |
-| `POST` | `/api/chamados/{id}/encerrar` | Encerra o chamado e exige `causaReal`. |
+| `PATCH` | `/api/chamados/{id}/detalhes` | Atualiza resumo, descrição, natureza, setor e canal informados; preserva campos omitidos/nulos. |
+| `PATCH` | `/api/chamados/{id}/equipe` | Define `equipe` como `N1` ou `N2`. |
+| `POST` | `/api/chamados/{id}/encerrar` | Encerra o chamado e exige `causaReal` e `solucaoAplicada`. |
 
 Exemplos de corpos JSON:
 
@@ -107,8 +109,30 @@ Exemplos de corpos JSON:
 ```
 
 ```json
-{ "causaReal": "Falha no equipamento substituído" }
+{ "causaReal": "Fonte de alimentação queimada", "solucaoAplicada": "Substituição da fonte e teste de funcionamento" }
 ```
+
+Exemplo de abertura completa:
+
+```json
+{
+  "telefoneCliente": "11999990000",
+  "nomeCliente": "Cliente de teste",
+  "resumo": "Computador não liga",
+  "descricao": "Equipamento sem sinal de energia após testar outra tomada",
+  "natureza": "INCIDENTE",
+  "setor": "Financeiro",
+  "canal": "WHATSAPP",
+  "equipe": "N1",
+  "prioridadeSugerida": "CRITICA"
+}
+```
+
+Categorias da API: natureza `INCIDENTE`, `REQUISICAO` ou `DUVIDA`; prioridade `BAIXA`, `MEDIA`, `ALTA` ou `CRITICA`; canal `MANUAL` ou `WHATSAPP`; equipe `N1` ou `N2`. São normalizadas para maiúsculas e rejeitam valores desconhecidos. `MANUAL` é o canal padrão se omitido. Informar `WHATSAPP` registra o canal; a integração de mensagens será implementada em outra etapa.
+
+Limites: resumo 200 caracteres, setor e nome 150, descrição/causa/solução 10.000. A edição de detalhes preserva campos nulos/omitidos e rejeita textos vazios; não permite limpar um campo nesta versão. Dados opcionais antigos podem permanecer nulos.
+
+**Mudança de contrato:** encerramento agora exige também `solucaoAplicada`. Clientes que enviavam apenas `causaReal` devem ser atualizados. Chamados encerrados continuam bloqueados para edição.
 
 A prioridade sugerida é persistida separadamente da prioridade final. Chamados encerrados não podem ser alterados; um novo chamado do mesmo telefone recebe o ID do chamado anterior quando o registro mais recente do cliente está encerrado. A causa real e a data de encerramento do chamado anterior permanecem preservadas.
 
@@ -124,6 +148,8 @@ mvn test
 O teste de contexto usa um banco H2 em memória, portanto não precisa de uma instância do PostgreSQL para ser executado.
 
 ## Mapa de funcionalidades
+
+Acompanhe as etapas, critérios de conclusão e branches no [fluxo de implementação e commits](docs/fluxo-de-implementacao.md).
 
 Consulte o [mapa de funcionalidades](docs/mapa-de-funcionalidades.md) para ver os requisitos das telas e diagramas, a situação atual e a ordem sugerida de implementação.
 

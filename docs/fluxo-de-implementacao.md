@@ -6,7 +6,7 @@ Entregar incrementos funcionais, começando pelo domínio que sustenta as telas.
 
 | Ordem | Branch / commit sugerido | Entrega e critério de conclusão | Estado |
 | --- | --- | --- | --- |
-| 1 | `feat/base-dados-chamados` — `feat(chamados): completa dados e encerramento` | Resumo, descrição, natureza, setor, canal, equipe, prioridades padronizadas e solução aplicada; criação, edição e encerramento testados por HTTP com persistência | Em implementação |
+| 1 | `feat/base-dados-chamados` — `feat(chamados): completa dados e encerramento` | Resumo, descrição, natureza, setor, canal, equipe, prioridades padronizadas e solução aplicada; criação, edição e encerramento testados por HTTP com persistência | Implementado e validado nesta branch |
 | 2 | `feat/migracoes-banco` — `feat(database): versiona schema de chamados` | Migrações versionadas; testar banco vazio e atualização de banco existente sem apagar registros; substituir atualização automática do Hibernate por validação | Pendente |
 | 3 | `feat/acesso-tecnicos` — `feat(auth): autentica tecnicos e restringe acesso` | Identidade de técnicos, equipes e autorização; testar acesso negado, atribuição e autor das operações | Pendente |
 | 4 | `feat/mensagens-whatsapp` — commits de mensagens, webhook e envio | Persistir conversa, autenticar webhook Evolution, deduplicar eventos, associar chamado e controlar falhas de envio | Pendente |
@@ -40,3 +40,9 @@ Antes da etapa 4, definir a regra de associação de nova mensagem a chamado abe
 - Encerramento passa a exigir `solucaoAplicada` junto de `causaReal`: mudança intencional no contrato, alinhada à tela 4. Clientes antigos precisam enviar os dois campos.
 - Registros antigos continuam legíveis com campos novos nulos. A etapa de migrações ainda é necessária antes de disponibilização em produção.
 - Natureza atual é informada manualmente. Sugestões de natureza, decisões e histórico da IA serão entidades/contratos próprios; não sobrescrever a sugestão original.
+
+## Validação do primeiro incremento
+
+- `mvn verify`: 15 testes executados, sem falhas, erros ou testes ignorados; inclui 12 casos de integração HTTP com H2.
+- API executada com PostgreSQL local: criação completa, edição, encaminhamento N2, rejeição de encerramento incompleto, persistência de causa/solução e bloqueio após encerramento aprovados.
+- Compilação e empacotamento do JAR concluídos. Migrações e integrações externas seguem pendentes conforme a sequência acima.

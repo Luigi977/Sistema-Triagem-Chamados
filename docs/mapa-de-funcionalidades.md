@@ -2,7 +2,13 @@
 
 Análise das cinco telas e dos diagramas de fluxo e arquitetura em `docs`, confrontada com o código atual. As imagens são protótipos com dados fictícios; não demonstram integração funcional. A parte inferior do painel de IA em `tela-2.png` está cortada; os requisitos de aceite/edição vêm do diagrama de fluxo.
 
-## Situação atual
+## Incremento implementado: base dos chamados
+
+A API agora persiste resumo, descrição, natureza, setor, canal, equipe e solução aplicada, valida prioridades/categorias e oferece edição de detalhes e encaminhamento N1/N2. Encerramento exige causa e solução. Os dados novos de abertura são opcionais para preservar clientes existentes. Natureza é manual; ainda não existe sugestão de natureza ou histórico de triagem.
+
+O inventário abaixo registra a análise original dos protótipos. Para a evolução do projeto, consulte o [fluxo de implementação](fluxo-de-implementacao.md) e os contratos atualizados no README. Autenticação, migrações versionadas, WhatsApp, IA e frontend continuam pendentes.
+
+## Situação na análise inicial
 
 - Backend Spring Boot com PostgreSQL: criação, consulta por ID, listagem paginada, filtros, histórico por telefone, alteração de status, prioridade final, responsável e encerramento com causa real.
 - Prioridade sugerida e final são campos separados. A sugerida é recebida na criação; ainda não é produzida por uma IA.

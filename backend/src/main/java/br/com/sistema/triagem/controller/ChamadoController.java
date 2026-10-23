@@ -24,8 +24,7 @@ public class ChamadoController {
 
     @PostMapping
     public ResponseEntity<Chamado> criarChamado(@RequestBody CriarChamadoRequest request) {
-        Chamado chamado = chamadoService.criarChamado(
-                request.telefoneCliente(), request.nomeCliente(), request.prioridadeSugerida());
+        Chamado chamado = chamadoService.criarChamado(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(chamado.getId())
@@ -81,9 +80,19 @@ public class ChamadoController {
         return chamadoService.atribuirResponsavel(id, request.responsavel());
     }
 
+    @PatchMapping("/{id}/detalhes")
+    public Chamado atualizarDetalhes(@PathVariable Long id, @RequestBody AtualizarDetalhesRequest request) {
+        return chamadoService.atualizarDetalhes(id, request);
+    }
+
+    @PatchMapping("/{id}/equipe")
+    public Chamado alterarEquipe(@PathVariable Long id, @RequestBody AlterarEquipeRequest request) {
+        return chamadoService.alterarEquipe(id, request.equipe());
+    }
+
     @PostMapping("/{id}/encerrar")
     public Chamado encerrarChamado(@PathVariable Long id, @RequestBody EncerrarChamadoRequest request) {
-        return chamadoService.encerrarChamado(id, request.causaReal());
+        return chamadoService.encerrarChamado(id, request.causaReal(), request.solucaoAplicada());
     }
 
 }

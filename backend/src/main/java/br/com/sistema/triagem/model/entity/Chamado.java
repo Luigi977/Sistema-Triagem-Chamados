@@ -42,6 +42,27 @@ public class Chamado {
     @Column(name = "data_encerramento")
     private LocalDateTime dataEncerramento;
 
+    @Column(length = 200)
+    private String resumo;
+
+    @Column(columnDefinition = "TEXT")
+    private String descricao;
+
+    @Column(length = 20)
+    private String natureza;
+
+    @Column(length = 150)
+    private String setor;
+
+    @Column(length = 20)
+    private String canal;
+
+    @Column(length = 10)
+    private String equipe;
+
+    @Column(name = "solucao_aplicada", columnDefinition = "TEXT")
+    private String solucaoAplicada;
+
     public Chamado() {
     }
 
@@ -127,5 +148,61 @@ public class Chamado {
 
     public void setDataEncerramento(LocalDateTime dataEncerramento) {
         this.dataEncerramento = dataEncerramento;
+    }
+
+    public String getResumo() {
+        return resumo;
+    }
+
+    public void setResumo(String resumo) {
+        this.resumo = resumo;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
+
+    public String getNatureza() {
+        return natureza;
+    }
+
+    public void setNatureza(String natureza) {
+        this.natureza = natureza;
+    }
+
+    public String getSetor() {
+        return setor;
+    }
+
+    public void setSetor(String setor) {
+        this.setor = setor;
+    }
+
+    public String getCanal() {
+        return canal;
+    }
+
+    public void setCanal(String canal) {
+        this.canal = canal;
+    }
+
+    public String getEquipe() {
+        return equipe;
+    }
+
+    public void setEquipe(String equipe) {
+        this.equipe = equipe;
+    }
+
+    public String getSolucaoAplicada() {
+        return solucaoAplicada;
+    }
+
+    public void setSolucaoAplicada(String solucaoAplicada) {
+        this.solucaoAplicada = solucaoAplicada;
     }
 }

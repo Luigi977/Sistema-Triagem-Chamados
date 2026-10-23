@@ -8,7 +8,13 @@ public final class ChamadoRequests {
     public record CriarChamadoRequest(
             String telefoneCliente,
             String nomeCliente,
-            String prioridadeSugerida) {
+            String prioridadeSugerida,
+            String resumo,
+            String descricao,
+            String natureza,
+            String setor,
+            String canal,
+            String equipe) {
     }
 
     public record AlterarStatusRequest(String status) {
@@ -20,6 +26,13 @@ public final class ChamadoRequests {
     public record AtribuirResponsavelRequest(String responsavel) {
     }
 
-    public record EncerrarChamadoRequest(String causaReal) {
+    public record AtualizarDetalhesRequest(
+            String resumo, String descricao, String natureza, String setor, String canal) {
+    }
+
+    public record AlterarEquipeRequest(String equipe) {
+    }
+
+    public record EncerrarChamadoRequest(String causaReal, String solucaoAplicada) {
     }
 }
