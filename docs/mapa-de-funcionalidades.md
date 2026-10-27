@@ -15,7 +15,8 @@ O inventário abaixo registra a análise original dos protótipos. Para a evolu�
 - Encerramento registra data e bloqueia alterações posteriores. Novo chamado pode referenciar o anterior quando o último chamado daquele telefone está encerrado.
 - Frontend: diretórios com `.gitkeep`, sem aplicação React implementada.
 - IA: `train.py`, `predict.py` e `requirements.txt` vazios; subdiretórios também são placeholders.
-- Sem implementação encontrada para Evolution API, mensagens, triagem, avaliação, dashboard ou autenticação.
+- Mensagens: registro e consulta por chamado, histórico cronológico e unicidade global do identificador externo implementados no backend.
+- Sem implementação encontrada para Evolution API, triagem, avaliação, dashboard ou autenticação.
 - `database/schema` e `database/migrations` ainda não contêm scripts. Hibernate usa `ddl-auto=update`.
 
 ## Fluxo necessário
@@ -45,7 +46,7 @@ A IA recomenda; a decisão final é do técnico. O estado da triagem deve ser se
 | Ordenação — tela 1 | Ordenar por severidade da prioridade sugerida e desempatar por tempo de abertura | Paginação e ordenação genérica existem; texto de prioridade não fornece ordem de severidade |
 | Distribuição — tela 1 | Contagem por incidente, requisição e dúvida | Natureza não existe no modelo |
 | Pendências — telas 1 e 3 | Contar e listar recomendações aguardando decisão; abrir triagem | Falta estado e consulta de triagem |
-| Atendimento — tela 2 | Conversa cronológica, remetente, horário, envio de resposta e resultado do envio | Não há entidade de mensagem nem integração WhatsApp |
+| Atendimento — tela 2 | Conversa cronológica, remetente, horário, envio de resposta e resultado do envio | Entidade e API de mensagens com histórico cronológico implementadas; interface e integração WhatsApp pendentes |
 | Cliente — tela 2 | Nome, telefone, setor, canal, abertura e histórico de chamados navegável | Nome, telefone, abertura e busca por telefone existem; faltam setor, canal e interface |
 | Triagem — telas 2 e 3, diagramas | Exibir natureza sugerida, prioridade e hipóteses de causa; aceitar ou editar; registrar autor, data e alterações | Só existem campos de prioridade sugerida/final; falta o restante do processo |
 | Encaminhamento — tela 1 e fluxo | Atribuir técnico, encaminhar N1/N2 e acompanhar atendimento | Responsável é texto livre; faltam equipes, identidade do técnico e histórico de encaminhamento |
@@ -67,7 +68,7 @@ A IA recomenda; a decisão final é do técnico. O estado da triagem deve ser se
 | PostgreSQL | Persistir chamados, mensagens, triagens, decisões, avaliações e relacionamentos, com migrações versionadas |
 | Frontend React | Implementar as cinco telas, navegação e integração com estados de carregamento, vazio, erro e sucesso |
 
-Contratos HTTP a projetar: webhook; leitura/envio de mensagens por chamado; solicitação/consulta de triagem; aceite/correção; avaliação; agregações do dashboard. São propostas de contratos, não endpoints existentes. O provedor de LLM e a forma de disponibilizar o modelo ainda não estão definidos nos arquivos.
+Contratos HTTP de registro e leitura de mensagens estão documentados no README. Contratos ainda a projetar: webhook; envio real pelo WhatsApp; solicitação/consulta de triagem; aceite/correção; avaliação; agregações do dashboard. Estes últimos são propostas, não endpoints existentes. O provedor de LLM e a forma de disponibilizar o modelo ainda não estão definidos nos arquivos.
 
 ## Dados que faltam
 

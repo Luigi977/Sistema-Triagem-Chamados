@@ -9,7 +9,7 @@ Entregar incrementos funcionais, começando pelo domínio que sustenta as telas.
 | 1 | `feat/base-dados-chamados` — `feat(chamados): completa dados e encerramento` | Resumo, descrição, natureza, setor, canal, equipe, prioridades padronizadas e solução aplicada; criação, edição e encerramento testados por HTTP com persistência | Implementado e validado nesta branch |
 | 2 | `feat/migracoes-banco` — `feat(database): versiona schema de chamados` | Migrações versionadas; testar banco vazio e atualização de banco existente sem apagar registros; substituir atualização automática do Hibernate por validação | Pendente |
 | 3 | `feat/acesso-tecnicos` — `feat(auth): autentica tecnicos e restringe acesso` | Identidade de técnicos, equipes e autorização; testar acesso negado, atribuição e autor das operações | Pendente |
-| 4 | `feat/mensagens-whatsapp` — commits de mensagens, webhook e envio | Persistir conversa, autenticar webhook Evolution, deduplicar eventos, associar chamado e controlar falhas de envio | Pendente |
+| 4 | `feat/mensagens-whatsapp` — commits de mensagens, webhook e envio | Persistir conversa, autenticar webhook Evolution, deduplicar eventos, associar chamado e controlar falhas de envio | Parcial: API de registro/consulta e unicidade de mensagens implementadas; webhook e envio pendentes |
 | 5 | `feat/frontend-atendimento` — commits de estrutura React e atendimento | Lista/detalhe de chamados e conversa integrada; estados vazio, carregamento, erro e envio; validar fluxo no navegador | Pendente |
 | 6 | `feat/triagem-humana` — commits de triagem e histórico | Separar sugestão de decisão final; aceitar/corrigir com autor e histórico; atender manualmente sem IA | Pendente |
 | 7 | `feat/servico-ia` — commits de contrato Python e integração Java | Classificar natureza, recomendar prioridade e causas; versão do modelo/prompt, timeout e falhas testados; datasets e pesos fora do Git | Pendente |
@@ -46,3 +46,11 @@ Antes da etapa 4, definir a regra de associação de nova mensagem a chamado abe
 - `mvn verify`: 15 testes executados, sem falhas, erros ou testes ignorados; inclui 12 casos de integração HTTP com H2.
 - API executada com PostgreSQL local: criação completa, edição, encaminhamento N2, rejeição de encerramento incompleto, persistência de causa/solução e bloqueio após encerramento aprovados.
 - Compilação e empacotamento do JAR concluídos. Migrações e integrações externas seguem pendentes conforme a sequência acima.
+
+## Incremento de histórico de mensagens
+
+- Entidade, DTOs, repositório, serviço e controller de mensagens implementados. Contratos e exemplos estão no README.
+- Registro exige chamado existente, remetente válido, conteúdo e tipo; consultas retornam histórico cronológico e mensagem individual.
+- Identificador externo opcional com unicidade global no banco; duplicatas retornam `409`, inclusive em requisições simultâneas.
+- `mvn verify`: 31 testes aprovados, incluindo 16 casos novos de integração HTTP com H2; JAR gerado. Execução com JDK 25.0.4.1 disponível na máquina e compilação configurada para Java 21. Esta execução não valida PostgreSQL nem runtime JDK 21.
+- Webhook Evolution, associação automática de eventos a chamados, envio pelo WhatsApp e tratamento de falhas do provedor seguem pendentes.
