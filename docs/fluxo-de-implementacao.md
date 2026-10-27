@@ -23,8 +23,8 @@ Antes da etapa 4, definir a regra de associação de nova mensagem a chamado abe
 
 1. Atualizar a referência de `main` e criar uma branch no checkout existente. Não é necessário criar worktree.
 2. Escolher uma entrega da tabela e explicitar contrato HTTP, regras e compatibilidade.
-3. Implementar a funcionalidade junto dos testes que demonstram seu comportamento, incluindo erros e persistência.
-4. Executar `mvn verify` no backend com JDK 21; adicionar validações específicas de frontend/IA quando esses componentes existirem.
+3. Implementar a funcionalidade junto dos testes que demonstram seu comportamento, incluindo erros e persistência. A cada criação ou alteração de endpoint, atualizar também a [coleção Postman](postman/triagem-chamados.postman_collection.json), seus exemplos e asserções no mesmo incremento; seguir o [guia de manutenção](postman/README.md).
+4. Executar `mvn verify` no backend com JDK 21 e validar a coleção Postman completa contra um backend de teste quando a API mudar; adicionar validações específicas de frontend/IA quando esses componentes existirem.
 5. Atualizar README e mapa com contratos e limitações reais. Conferir `git diff --check`, arquivos staged e ausência de dados/segredos.
 6. Criar commits pequenos e completos: `feat`, `fix`, `test` ou `docs`, com escopo. Evitar um commit separado de testes que deixe a funcionalidade anterior sem validação.
 7. Enviar a branch e abrir revisão contra `main`, informando problema, mudança, testes e compatibilidade. Integrar após revisão e checks; não usar force push em `main`.

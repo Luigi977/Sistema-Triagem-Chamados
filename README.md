@@ -166,6 +166,8 @@ A tabela `mensagens`, a chave estrangeira para `chamados`, a restrição de unic
 
 ## Como testar
 
+Para testar a API no Postman, importe a [coleção de testes](docs/postman/triagem-chamados.postman_collection.json) e o [ambiente local](docs/postman/local.postman_environment.json). A coleção cobre os endpoints atuais, captura IDs automaticamente e inclui cenários de sucesso e erro. Veja a [ordem de execução e instruções](docs/postman/README.md). Ela deve ser atualizada junto de cada implementação que altere a API.
+
 Execute a suíte de testes a partir do diretório `backend`:
 
 ```powershell

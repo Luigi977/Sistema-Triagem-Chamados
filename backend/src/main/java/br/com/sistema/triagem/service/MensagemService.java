@@ -52,8 +52,8 @@ public class MensagemService {
         LocalDateTime dataEnvio = request.dataEnvio() == null ? LocalDateTime.now() : request.dataEnvio();
         mensagem.setDataEnvio(dataEnvio.truncatedTo(ChronoUnit.MICROS));
         mensagem.setIdentificadorExterno(identificadorExterno);
+        
         try {
-            // Flush dentro da transação permite traduzir também duplicatas concorrentes para HTTP 409.
             return MensagemResponseDTO.from(mensagemRepository.saveAndFlush(mensagem));
         } catch (DataIntegrityViolationException exception) {
             for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
