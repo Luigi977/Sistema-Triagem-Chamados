@@ -1,0 +1,3300 @@
+{
+  "info": {
+    "_postman_id": "8a3c5561-f935-4144-a6d5-a537bc146453",
+    "name": "Sistema de Triagem de Chamados — Testes da API",
+    "description": "Regressão dos endpoints implementados. Execute todas as pastas na ordem. A primeira criação gera dados fictícios novos e limpa os IDs anteriores. Configure baseUrl sem barra final. Cada iteração cria 3 chamados e 5 mensagens e encerra o chamado principal. Não há endpoint DELETE para limpeza; use um banco de desenvolvimento/teste. Não envia mensagens reais pelo WhatsApp. Para requisições avulsas, execute primeiro as etapas que criam seus dados. Atualizar esta coleção a cada mudança da API. Instruções: docs/postman/README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "URL do backend, sem barra final."
+    },
+    {
+      "key": "chamadoId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "outroChamadoId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "novoChamadoId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "mensagemClienteId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "mensagemTecnicoId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "mensagemSistemaId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "mensagemSemIdExternoId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "telefoneTeste",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "outroTelefoneTeste",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "identificadorExternoTeste",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "execucaoId",
+      "value": "",
+      "type": "string",
+      "description": "Preenchida automaticamente ao executar a coleção na ordem."
+    },
+    {
+      "key": "idInexistente",
+      "value": "-1",
+      "type": "string",
+      "description": "ID negativo, não gerado pelo banco."
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Saúde",
+      "description": "Confere se o backend está acessível.",
+      "item": [
+        {
+          "name": "01 — Verificar saúde",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Corpo OK\", function () {",
+                  "pm.expect(pm.response.text()).to.eql('OK');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 — Chamados: criação, consultas e atendimento",
+      "description": "Prepara dados novos e armazena os IDs para as demais pastas. Fluxos positivos de consulta e atualização.",
+      "item": [
+        {
+          "name": "02 — Criar chamado completo e preparar execução",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "description": "Inicia nova execução: gera telefones fictícios e identificador externo únicos, limpa IDs anteriores e salva chamadoId. Executar novamente reinicia os dados usados pelas demais requisições.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{telefoneTeste}}\",\n  \"nomeCliente\": \"Cliente fictício Postman\",\n  \"prioridadeSugerida\": \" alta \",\n  \"resumo\": \" Computador não liga \",\n  \"descricao\": \"Equipamento de teste sem energia\",\n  \"natureza\": \" incidente \",\n  \"setor\": \"Laboratório de testes\",\n  \"canal\": \" whatsapp \",\n  \"equipe\": \" n1 \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "[\"chamadoId\",\"outroChamadoId\",\"novoChamadoId\",\"mensagemClienteId\",\"mensagemTecnicoId\",\"mensagemSistemaId\",\"mensagemSemIdExternoId\",\"telefoneTeste\",\"outroTelefoneTeste\",\"identificadorExternoTeste\",\"execucaoId\"].forEach(function (key) { pm.collectionVariables.unset(key); });",
+                  "const token = pm.variables.replaceIn('{{$guid}}');",
+                  "const digits = Date.now().toString() + Math.floor(Math.random() * 1000000).toString().padStart(6, '0');",
+                  "pm.collectionVariables.set('execucaoId', token);",
+                  "pm.collectionVariables.set('telefoneTeste', '000' + digits);",
+                  "pm.collectionVariables.set('outroTelefoneTeste', '001' + digits);",
+                  "pm.collectionVariables.set('identificadorExternoTeste', 'postman.' + token);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"chamadoId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/chamados/\" + data.id + '$'));",
+                  "pm.expect(data.telefoneCliente).to.eql(pm.collectionVariables.get(\"telefoneTeste\"));",
+                  "pm.expect(data.status).to.eql(\"ABERTO\");",
+                  "pm.expect(data.prioridadeSugerida).to.eql(\"ALTA\");",
+                  "pm.expect(data.resumo).to.eql(\"Computador não liga\");",
+                  "pm.expect(data.natureza).to.eql(\"INCIDENTE\");",
+                  "pm.expect(data.canal).to.eql(\"WHATSAPP\");",
+                  "pm.expect(data.equipe).to.eql(\"N1\");",
+                  "pm.expect(data.chamadoAnteriorId).to.eql(null);",
+                  "pm.expect(data.dataAbertura).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "03 — Criar chamado mínimo para isolamento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{outroTelefoneTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"outroChamadoId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/chamados/\" + data.id + '$'));",
+                  "pm.expect(data.status).to.eql(\"ABERTO\");",
+                  "pm.expect(data.canal).to.eql(\"MANUAL\");",
+                  "pm.expect(data.prioridadeFinal).to.eql(null);",
+                  "pm.expect(data.telefoneCliente).to.eql(pm.collectionVariables.get(\"outroTelefoneTeste\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "04 — Consultar chamado por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Consulta o chamado criado\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.resumo).to.eql(\"Computador não liga\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "05 — Listar chamados com paginação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados?page=0&size=5&sort=dataAbertura,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                },
+                {
+                  "key": "sort",
+                  "value": "dataAbertura,desc"
+                }
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Contrato de página\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.content).to.be.an('array');",
+                  "pm.expect(data.number).to.eql(0);",
+                  "pm.expect(data.size).to.eql(5);",
+                  "pm.expect(data.content.length).to.be.at.most(5);",
+                  "pm.expect(data.totalElements).to.be.at.least(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "06 — Listar chamados abertos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/abertos?page=0&size=20&sort=dataAbertura,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "abertos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "dataAbertura,desc"
+                }
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Somente status abertos\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.content).to.be.an('array').and.not.empty;",
+                  "data.content.forEach(function (c) { pm.expect(['ABERTO', 'EM_ATENDIMENTO', 'AGUARDANDO_USUARIO']).to.include(c.status); });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "07 — Consultar chamados do cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/cliente/{{telefoneTeste}}?page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "cliente",
+                "{{telefoneTeste}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Somente o telefone desta execução\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.totalElements).to.eql(1);",
+                  "pm.expect(data.content[0].id).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.content[0].telefoneCliente).to.eql(pm.collectionVariables.get(\"telefoneTeste\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "08 — Iniciar atendimento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "status"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \" em_atendimento \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Status normalizado\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.status).to.eql(\"EM_ATENDIMENTO\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "09 — Definir prioridade final",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "prioridade"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prioridadeFinal\": \" critica \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Preserva prioridade sugerida\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.prioridadeFinal).to.eql(\"CRITICA\");",
+                  "pm.expect(data.prioridadeSugerida).to.eql(\"ALTA\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "10 — Atribuir responsável",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/responsavel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "responsavel"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responsavel\": \" Técnico Postman \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Responsável normalizado\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.responsavel).to.eql(\"Técnico Postman\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "11 — Atualizar detalhes parcialmente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/detalhes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "detalhes"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumo\": null,\n  \"descricao\": \"Diagnóstico atualizado pelo teste\",\n  \"natureza\": \" duvida \",\n  \"setor\": \"TI de testes\",\n  \"canal\": \" manual \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Atualiza campos e preserva resumo nulo\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.resumo).to.eql(\"Computador não liga\");",
+                  "pm.expect(data.descricao).to.eql(\"Diagnóstico atualizado pelo teste\");",
+                  "pm.expect(data.natureza).to.eql(\"DUVIDA\");",
+                  "pm.expect(data.setor).to.eql(\"TI de testes\");",
+                  "pm.expect(data.canal).to.eql(\"MANUAL\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "12 — Encaminhar para equipe N2",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/equipe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "equipe"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipe\": \" n2 \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Equipe normalizada\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.equipe).to.eql(\"N2\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "13 — Filtrar por status, telefone, prioridade e responsável",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados?status=em_atendimento&telefone={{telefoneTeste}}&prioridadeFinal=critica&responsavel=Postman&page=0&size=20&sort=id,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "em_atendimento"
+                },
+                {
+                  "key": "telefone",
+                  "value": "{{telefoneTeste}}"
+                },
+                {
+                  "key": "prioridadeFinal",
+                  "value": "critica"
+                },
+                {
+                  "key": "responsavel",
+                  "value": "Postman"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc"
+                }
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Combina os quatro filtros\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.totalElements).to.eql(1);",
+                  "pm.expect(data.content[0].id).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.content[0].status).to.eql(\"EM_ATENDIMENTO\");",
+                  "pm.expect(data.content[0].prioridadeFinal).to.eql(\"CRITICA\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "14 — Aguardar usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "status"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"AGUARDANDO_USUARIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Status de espera\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.status).to.eql(\"AGUARDANDO_USUARIO\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 — Chamados: validações e recursos ausentes",
+      "description": "Erros esperados fazem parte dos testes. HTTP 400 ou 404 é sucesso quando coincide com o cenário.",
+      "item": [
+        {
+          "name": "15 — Rejeitar criação sem telefone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomeCliente\": \"Sem telefone\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "16 — Rejeitar natureza desconhecida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{telefoneTeste}}\",\n  \"natureza\": \"OUTRA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "17 — Rejeitar canal desconhecido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{telefoneTeste}}\",\n  \"canal\": \"EMAIL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "18 — Rejeitar status desconhecido",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "status"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"INVALIDO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "19 — Rejeitar encerramento pelo PATCH de status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "status"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ENCERRADO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "20 — Rejeitar prioridade desconhecida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "prioridade"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prioridadeFinal\": \"URGENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "21 — Rejeitar responsável vazio",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/responsavel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "responsavel"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responsavel\": \" \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "22 — Rejeitar equipe desconhecida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/equipe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "equipe"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipe\": \"N3\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "23 — Rejeitar resumo vazio",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/detalhes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "detalhes"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumo\": \" \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "24 — Rejeitar resumo acima de 200 caracteres",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/detalhes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "detalhes"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumo\": \"{{resumoExcedido}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('resumoExcedido', 'a'.repeat(201));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "25 — Rejeitar edição parcialmente inválida",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/detalhes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "detalhes"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumo\": \"Esta alteração deve ser revertida\",\n  \"natureza\": \"INVALIDA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "26 — Confirmar que erros não alteraram o chamado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Estado preservado\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.resumo).to.eql(\"Computador não liga\");",
+                  "pm.expect(data.natureza).to.eql(\"DUVIDA\");",
+                  "pm.expect(data.status).to.eql(\"AGUARDANDO_USUARIO\");",
+                  "pm.expect(data.prioridadeFinal).to.eql(\"CRITICA\");",
+                  "pm.expect(data.responsavel).to.eql(\"Técnico Postman\");",
+                  "pm.expect(data.equipe).to.eql(\"N2\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "27 — Consultar chamado inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{idInexistente}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{idInexistente}}"
+              ]
+            },
+            "description": "Espera HTTP 404. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "28 — Atualizar chamado inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{idInexistente}}/detalhes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{idInexistente}}",
+                "detalhes"
+              ]
+            },
+            "description": "Espera HTTP 404. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumo\": \"Inexistente\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "29 — Rejeitar filtro de status inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados?status=INVALIDO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "INVALIDO"
+                }
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 — Mensagens: histórico e deduplicação",
+      "description": "Mensagens fora da ordem cronológica, três remetentes, isolamento entre chamados, data automática e unicidade global do identificador externo.",
+      "item": [
+        {
+          "name": "30 — Consultar histórico vazio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Lista vazia\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.eql([]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "31 — Registrar mensagem do cliente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \" cliente \",\n  \"conteudo\": \"  Meu computador não liga.\\nPreciso de ajuda.  \",\n  \"tipo\": \" texto \",\n  \"dataEnvio\": \"2026-01-01T10:00:00.123456789\",\n  \"identificadorExterno\": \" {{identificadorExternoTeste}} \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"mensagemClienteId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
+                  "pm.expect(data.chamadoId).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.remetente).to.eql(\"CLIENTE\");",
+                  "pm.expect(data.tipo).to.eql(\"TEXTO\");",
+                  "pm.expect(data.conteudo).to.eql(\"  Meu computador não liga.\\nPreciso de ajuda.  \");",
+                  "pm.expect(data.dataEnvio).to.eql(\"2026-01-01T10:00:00.123456\");",
+                  "pm.expect(data.identificadorExterno).to.eql(pm.collectionVariables.get(\"identificadorExternoTeste\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "32 — Registrar resposta do técnico com horário anterior",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"TECNICO\",\n  \"conteudo\": \"Conferir alimentação do equipamento.\",\n  \"tipo\": \"TEXTO\",\n  \"dataEnvio\": \"2026-01-01T09:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"mensagemTecnicoId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
+                  "pm.expect(data.remetente).to.eql(\"TECNICO\");",
+                  "pm.expect(data.identificadorExterno).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "33 — Registrar evento do sistema com horário empatado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"SISTEMA\",\n  \"conteudo\": \"Atendimento atualizado.\",\n  \"tipo\": \"EVENTO\",\n  \"dataEnvio\": \"2026-01-01T10:00:00.123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"mensagemSistemaId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
+                  "pm.expect(data.remetente).to.eql(\"SISTEMA\");",
+                  "pm.expect(data.tipo).to.eql(\"EVENTO\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "34 — Consultar mensagem individual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensagens/{{mensagemClienteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensagens",
+                "{{mensagemClienteId}}"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Mensagem persistida\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.eql(Number(pm.collectionVariables.get(\"mensagemClienteId\")));",
+                  "pm.expect(data.chamadoId).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.conteudo).to.eql(\"  Meu computador não liga.\\nPreciso de ajuda.  \");",
+                  "pm.expect(data.dataEnvio).to.eql(\"2026-01-01T10:00:00.123456\");",
+                  "pm.expect(data.identificadorExterno).to.eql(pm.collectionVariables.get(\"identificadorExternoTeste\"));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "35 — Conferir ordem cronológica e desempate por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Ordena pelo envio, não pela inserção\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.be.an('array').with.lengthOf(3);",
+                  "pm.expect(data.map(function (m) { return m.id; })).to.eql([Number(pm.collectionVariables.get(\"mensagemTecnicoId\")), Number(pm.collectionVariables.get(\"mensagemClienteId\")), Number(pm.collectionVariables.get(\"mensagemSistemaId\"))]);",
+                  "data.forEach(function (m) { pm.expect(m.chamadoId).to.eql(Number(pm.collectionVariables.get(\"chamadoId\"))); });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "36 — Bloquear identificador externo duplicado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Não deve substituir o conteúdo original\",\n  \"tipo\": \"TEXTO\",\n  \"identificadorExterno\": \"{{identificadorExternoTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "37 — Bloquear duplicata em outro chamado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{outroChamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{outroChamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\",\n  \"identificadorExterno\": \" {{identificadorExternoTeste}} \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "38 — Conferir que duplicatas não foram persistidas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Contagem e conteúdo preservados\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.have.lengthOf(3);",
+                  "const original = data.find(function (m) { return m.id === Number(pm.collectionVariables.get(\"mensagemClienteId\")); });",
+                  "pm.expect(original.conteudo).to.eql(\"  Meu computador não liga.\\nPreciso de ajuda.  \");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "39 — Registrar com data automática e identificador vazio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\",\n  \"dataEnvio\": null,\n  \"identificadorExterno\": \" \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"mensagemSemIdExternoId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
+                  "pm.expect(data.identificadorExterno).to.eql(null);",
+                  "pm.expect(data.dataEnvio).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "40 — Registrar mensagem de outro chamado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{outroChamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{outroChamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test(\"Associa ao outro chamado\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.chamadoId).to.eql(Number(pm.collectionVariables.get(\"outroChamadoId\")));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "41 — Conferir isolamento do outro histórico",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{outroChamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{outroChamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Apenas a mensagem do outro chamado\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.have.lengthOf(1);",
+                  "pm.expect(data[0].chamadoId).to.eql(Number(pm.collectionVariables.get(\"outroChamadoId\")));",
+                  "pm.expect(data[0].conteudo).to.eql(\"Mensagem fictícia para teste\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "42 — Rejeitar remetente inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"OUTRO\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "43 — Rejeitar conteúdo vazio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \" \",\n  \"tipo\": \"TEXTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "44 — Rejeitar tipo ausente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Sem tipo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "45 — Rejeitar data inválida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\",\n  \"dataEnvio\": \"ontem\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "46 — Rejeitar identificador externo acima de 255 caracteres",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\",\n  \"identificadorExterno\": \"{{identificadorExcedido}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('identificadorExcedido', 'x'.repeat(256));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "47 — Registrar mensagem em chamado inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{idInexistente}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{idInexistente}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 404. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"CLIENTE\",\n  \"conteudo\": \"Mensagem fictícia para teste\",\n  \"tipo\": \"TEXTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "48 — Consultar histórico de chamado inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{idInexistente}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{idInexistente}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 404. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "49 — Consultar mensagem inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mensagens/{{idInexistente}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "mensagens",
+                "{{idInexistente}}"
+              ]
+            },
+            "description": "Espera HTTP 404. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () {",
+                  "pm.response.to.have.status(404);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "50 — Conferir histórico após erros de validação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Quatro mensagens válidas no chamado principal\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.have.lengthOf(4);",
+                  "pm.expect(data.map(function (m) { return m.id; })).to.have.members([Number(pm.collectionVariables.get(\"mensagemTecnicoId\")), Number(pm.collectionVariables.get(\"mensagemClienteId\")), Number(pm.collectionVariables.get(\"mensagemSistemaId\")), Number(pm.collectionVariables.get(\"mensagemSemIdExternoId\"))]);",
+                  "data.forEach(function (m) { pm.expect(m.chamadoId).to.eql(Number(pm.collectionVariables.get(\"chamadoId\"))); });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 — Encerramento e preservação do histórico",
+      "description": "Encerra o chamado principal, testa bloqueios de edição e cria novo chamado do mesmo telefone vinculado ao anterior.",
+      "item": [
+        {
+          "name": "51 — Rejeitar encerramento sem causa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/encerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "encerrar"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solucaoAplicada\": \"Substituição da fonte e teste de funcionamento\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "52 — Rejeitar encerramento sem solução",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/encerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "encerrar"
+              ]
+            },
+            "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"causaReal\": \"Fonte de alimentação com defeito (teste)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () {",
+                  "pm.response.to.have.status(400);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "53 — Confirmar que encerramento inválido preservou o estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Chamado continua aguardando usuário\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.status).to.eql(\"AGUARDANDO_USUARIO\");",
+                  "pm.expect(data.dataEncerramento).to.eql(null);",
+                  "pm.expect(data.causaReal).to.eql(null);",
+                  "pm.expect(data.solucaoAplicada).to.eql(null);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "54 — Encerrar com causa e solução",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/encerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "encerrar"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"causaReal\": \"Fonte de alimentação com defeito (teste)\",\n  \"solucaoAplicada\": \"Substituição da fonte e teste de funcionamento\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Encerramento completo\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.status).to.eql(\"ENCERRADO\");",
+                  "pm.expect(data.causaReal).to.eql(\"Fonte de alimentação com defeito (teste)\");",
+                  "pm.expect(data.solucaoAplicada).to.eql(\"Substituição da fonte e teste de funcionamento\");",
+                  "pm.expect(data.dataEncerramento).to.be.a('string').and.not.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "55 — Bloquear segundo encerramento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/encerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "encerrar"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"causaReal\": \"Fonte de alimentação com defeito (teste)\",\n  \"solucaoAplicada\": \"Substituição da fonte e teste de funcionamento\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "56 — Bloquear reabertura por status após encerramento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "status"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ABERTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "57 — Bloquear alteração de prioridade após encerramento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "prioridade"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prioridadeFinal\": \"BAIXA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "58 — Bloquear alteração de responsável após encerramento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/responsavel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "responsavel"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responsavel\": \"Outro técnico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "59 — Bloquear edição de detalhes após encerramento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/detalhes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "detalhes"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resumo\": \"Novo resumo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "60 — Bloquear alteração de equipe após encerramento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/equipe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "equipe"
+              ]
+            },
+            "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipe\": \"N1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () {",
+                  "pm.response.to.have.status(409);",
+                  "});",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "61 — Consultar chamado encerrado preservado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Dados preservados após tentativas de alteração\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.status).to.eql(\"ENCERRADO\");",
+                  "pm.expect(data.resumo).to.eql(\"Computador não liga\");",
+                  "pm.expect(data.prioridadeSugerida).to.eql(\"ALTA\");",
+                  "pm.expect(data.prioridadeFinal).to.eql(\"CRITICA\");",
+                  "pm.expect(data.responsavel).to.eql(\"Técnico Postman\");",
+                  "pm.expect(data.equipe).to.eql(\"N2\");",
+                  "pm.expect(data.causaReal).to.eql(\"Fonte de alimentação com defeito (teste)\");",
+                  "pm.expect(data.solucaoAplicada).to.eql(\"Substituição da fonte e teste de funcionamento\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "62 — Consultar histórico após encerramento",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{chamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{chamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Mensagens preservadas\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data).to.have.lengthOf(4);",
+                  "pm.expect(data.map(function (m) { return m.id; })).to.have.members([Number(pm.collectionVariables.get(\"mensagemTecnicoId\")), Number(pm.collectionVariables.get(\"mensagemClienteId\")), Number(pm.collectionVariables.get(\"mensagemSistemaId\")), Number(pm.collectionVariables.get(\"mensagemSemIdExternoId\"))]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "63 — Confirmar que chamado encerrado não aparece como aberto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados?telefone={{telefoneTeste}}&status=ABERTO&page=0&size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ],
+              "query": [
+                {
+                  "key": "telefone",
+                  "value": "{{telefoneTeste}}"
+                },
+                {
+                  "key": "status",
+                  "value": "ABERTO"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Filtro vazio\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.totalElements).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "64 — Criar novo chamado vinculado ao anterior",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "description": "Espera HTTP 201. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{telefoneTeste}}\",\n  \"resumo\": \"Novo atendimento após encerramento\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () {",
+                  "pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) { pm.collectionVariables.set(\"novoChamadoId\", String(pm.response.json().id)); }",
+                  "pm.test(\"Dados da criação e Location\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.id).to.be.a('number').and.above(0);",
+                  "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/chamados/\" + data.id + '$'));",
+                  "pm.expect(data.status).to.eql(\"ABERTO\");",
+                  "pm.expect(data.chamadoAnteriorId).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.id).not.to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "65 — Consultar histórico de chamados do cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/cliente/{{telefoneTeste}}?page=0&size=20&sort=id,asc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "cliente",
+                "{{telefoneTeste}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,asc"
+                }
+              ]
+            },
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () {",
+                  "pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Chamados anterior e novo separados\", function () {",
+                  "const data = pm.response.json();",
+                  "pm.expect(data.totalElements).to.eql(2);",
+                  "pm.expect(data.content[0].id).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.content[0].status).to.eql(\"ENCERRADO\");",
+                  "pm.expect(data.content[1].id).to.eql(Number(pm.collectionVariables.get(\"novoChamadoId\")));",
+                  "pm.expect(data.content[1].chamadoAnteriorId).to.eql(Number(pm.collectionVariables.get(\"chamadoId\")));",
+                  "pm.expect(data.content[1].status).to.eql(\"ABERTO\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

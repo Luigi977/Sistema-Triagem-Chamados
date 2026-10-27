@@ -128,7 +128,7 @@ Exemplo de abertura completa:
 }
 ```
 
-Categorias da API: natureza `INCIDENTE`, `REQUISICAO` ou `DUVIDA`; prioridade `BAIXA`, `MEDIA`, `ALTA` ou `CRITICA`; canal `MANUAL` ou `WHATSAPP`; equipe `N1` ou `N2`. São normalizadas para maiúsculas e rejeitam valores desconhecidos. `MANUAL` é o canal padrão se omitido. Informar `WHATSAPP` registra o canal; a integração de mensagens será implementada em outra etapa.
+Categorias da API: natureza `INCIDENTE`, `REQUISICAO` ou `DUVIDA`; prioridade `BAIXA`, `MEDIA`, `ALTA` ou `CRITICA`; canal `MANUAL` ou `WHATSAPP`; equipe `N1` ou `N2`. São normalizadas para maiúsculas e rejeitam valores desconhecidos. `MANUAL` é o canal padrão se omitido. Informar `WHATSAPP` registra o canal; a integração com o provedor WhatsApp será implementada em outra etapa.
 
 Limites: resumo 200 caracteres, setor e nome 150, descrição/causa/solução 10.000. A edição de detalhes preserva campos nulos/omitidos e rejeita textos vazios; não permite limpar um campo nesta versão. Dados opcionais antigos podem permanecer nulos.
 
@@ -136,7 +136,37 @@ Limites: resumo 200 caracteres, setor e nome 150, descrição/causa/solução 10
 
 A prioridade sugerida é persistida separadamente da prioridade final. Chamados encerrados não podem ser alterados; um novo chamado do mesmo telefone recebe o ID do chamado anterior quando o registro mais recente do cliente está encerrado. A causa real e a data de encerramento do chamado anterior permanecem preservadas.
 
+## API de mensagens
+
+| Método | Rota | Descrição |
+| --- | --- | --- |
+| `POST` | `/api/chamados/{id}/mensagens` | Registra mensagem no chamado existente; retorna `201` e `Location` da mensagem. |
+| `GET` | `/api/chamados/{id}/mensagens` | Retorna uma lista em ordem crescente de `dataEnvio`, com desempate por `id`; retorna `[]` quando o chamado não tem mensagens. |
+| `GET` | `/api/mensagens/{id}` | Consulta uma mensagem específica. |
+
+Exemplo de registro:
+
+```json
+{
+  "remetente": "CLIENTE",
+  "conteudo": "Meu computador não liga.",
+  "tipo": "TEXTO",
+  "dataEnvio": "2026-10-27T10:15:00",
+  "identificadorExterno": "wamid.exemplo"
+}
+```
+
+`remetente`, `conteudo` e `tipo` são obrigatórios. Remetentes permitidos: `CLIENTE`, `TECNICO` e `SISTEMA`. Remetente e tipo são normalizados para maiúsculas e sem espaços nas extremidades. O tipo é uma classificação textual livre de até 30 caracteres, como `TEXTO`, `IMAGEM` ou `AUDIO`; esta etapa armazena o conteúdo informado, sem processar anexos. O conteúdo preserva espaços e quebras de linha, deve conter texto e aceita até 10.000 caracteres.
+
+`dataEnvio` aceita data/hora ISO 8601 sem fuso, seguindo o padrão dos chamados; se nula ou omitida, usa a hora local do servidor. A precisão é truncada para microssegundos antes de persistir, mantendo registro e consulta consistentes. Integrações devem converter horários para o mesmo fuso antes do registro. `identificadorExterno` é opcional, tem limite de 255 caracteres, preserva maiúsculas/minúsculas e remove espaços nas extremidades; vazio equivale a ausente. O identificador tem unicidade global no banco, inclusive entre chamados diferentes e em requisições simultâneas. Uma repetição retorna `409 Conflict` e preserva a mensagem original; mensagens sem identificador podem ser registradas várias vezes.
+
+A resposta contém `id`, `chamadoId` e todos os campos do exemplo. Chamado ou mensagem inexistente retorna `404`; campos inválidos retornam `400`. O registro também permite associar histórico a chamados encerrados, sem alterar seus dados. A API persiste mensagens; recebimento automático por webhook, envio real de respostas pelo WhatsApp e identidade/autenticação do técnico ainda estão pendentes.
+
+A tabela `mensagens`, a chave estrangeira para `chamados`, a restrição de unicidade e o índice do histórico são criados pela configuração atual `spring.jpa.hibernate.ddl-auto=update`. Migrações versionadas seguem como etapa pendente.
+
 ## Como testar
+
+Para testar a API no Postman, importe a [coleção de testes](docs/postman/triagem-chamados.postman_collection.json) e o [ambiente local](docs/postman/local.postman_environment.json). A coleção cobre os endpoints atuais, captura IDs automaticamente e inclui cenários de sucesso e erro. Veja a [ordem de execução e instruções](docs/postman/README.md). Ela deve ser atualizada junto de cada implementação que altere a API.
 
 Execute a suíte de testes a partir do diretório `backend`:
 
@@ -145,7 +175,7 @@ cd backend
 mvn test
 ```
 
-O teste de contexto usa um banco H2 em memória, portanto não precisa de uma instância do PostgreSQL para ser executado.
+Os testes usam bancos H2 em memória, portanto não precisam de uma instância do PostgreSQL. A integração de mensagens cobre registro e consulta por HTTP, histórico cronológico, isolamento entre chamados, entradas inválidas, recursos ausentes e duplicatas sequenciais/concorrentes.
 
 ## Mapa de funcionalidades
 
