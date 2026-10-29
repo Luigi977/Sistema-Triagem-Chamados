@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
     "spring.datasource.url=jdbc:h2:mem:mensagens_http;DB_CLOSE_DELAY=-1",
     "spring.datasource.username=sa",
     "spring.datasource.password=",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.hibernate.ddl-auto=validate",
     "spring.jpa.open-in-view=false",
     "spring.jpa.show-sql=false"
 })

@@ -6,7 +6,7 @@ Análise das cinco telas e dos diagramas de fluxo e arquitetura em `docs`, confr
 
 A API agora persiste resumo, descrição, natureza, setor, canal, equipe e solução aplicada, valida prioridades/categorias e oferece edição de detalhes e encaminhamento N1/N2. Encerramento exige causa e solução. Os dados novos de abertura são opcionais para preservar clientes existentes. Natureza é manual; ainda não existe sugestão de natureza ou histórico de triagem.
 
-O inventário abaixo registra a análise original dos protótipos. Para a evolução do projeto, consulte o [fluxo de implementação](fluxo-de-implementacao.md) e os contratos atualizados no README. Autenticação, migrações versionadas, WhatsApp, IA e frontend continuam pendentes.
+O inventário abaixo registra a análise original dos protótipos. Para a evolução do projeto, consulte o [fluxo de implementação](fluxo-de-implementacao.md) e os contratos atualizados no README. Autenticação, WhatsApp, IA e frontend continuam pendentes. Migrações versionadas foram implementadas com Flyway.
 
 ## Situação na análise inicial
 
@@ -17,7 +17,7 @@ O inventário abaixo registra a análise original dos protótipos. Para a evolu�
 - IA: `train.py`, `predict.py` e `requirements.txt` vazios; subdiretórios também são placeholders.
 - Mensagens: registro e consulta por chamado, histórico cronológico e unicidade global do identificador externo implementados no backend.
 - Sem implementação encontrada para Evolution API, triagem, avaliação, dashboard ou autenticação.
-- `database/schema` e `database/migrations` ainda não contêm scripts. Hibernate usa `ddl-auto=update`.
+- Migrações Flyway ficam em `backend/src/main/resources/db/migration`; Hibernate usa `ddl-auto=validate`.
 
 ## Fluxo necessário
 

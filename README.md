@@ -162,7 +162,40 @@ Exemplo de registro:
 
 A resposta contém `id`, `chamadoId` e todos os campos do exemplo. Chamado ou mensagem inexistente retorna `404`; campos inválidos retornam `400`. O registro também permite associar histórico a chamados encerrados, sem alterar seus dados. A API persiste mensagens; recebimento automático por webhook, envio real de respostas pelo WhatsApp e identidade/autenticação do técnico ainda estão pendentes.
 
-A tabela `mensagens`, a chave estrangeira para `chamados`, a restrição de unicidade e o índice do histórico são criados pela configuração atual `spring.jpa.hibernate.ddl-auto=update`. Migrações versionadas seguem como etapa pendente.
+O schema é gerenciado por migrações Flyway versionadas em `backend/src/main/resources/db/migration`. O Hibernate apenas valida sua compatibilidade (`ddl-auto=validate`). Veja o procedimento de migração abaixo.
+
+## Migrações do banco
+
+Flyway executa as migrações antes da validação do Hibernate: `V1` cria a estrutura
+original de chamados, `V2` adiciona os detalhes opcionais e `V3` cria mensagens,
+chave estrangeira, unicidade do identificador externo e índice do histórico.
+Em banco vazio, basta iniciar a aplicação. O histórico e os checksums ficam em
+`flyway_schema_history`; não edite migrações já aplicadas, crie uma nova versão.
+
+Para adotar um banco existente criado pelo Hibernate:
+
+1. Faça backup e teste primeiro em uma cópia isolada. Pare as instâncias antigas
+   que ainda utilizam `ddl-auto=update`.
+2. Confira a URL e o schema de destino. São suportados o schema original de
+   chamados (V1), o schema com os detalhes opcionais e o schema atual com mensagens.
+   Tabelas existentes devem manter tipos, constraints e identidades compatíveis
+   com as entidades; divergências manuais precisam de revisão antes da adoção.
+3. Apenas na primeira inicialização, defina `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true`.
+   O baseline é **0**, permitindo executar todas as migrações. As tabelas/colunas
+   já existentes são preservadas; os novos campos opcionais permanecem nulos.
+4. Confirme a inicialização, as versões 1–3 no histórico e os registros preservados.
+   Remova a variável de baseline das próximas inicializações.
+
+O baseline automático fica desativado por padrão para impedir adoção acidental
+de outro banco. Não use baseline 1 ou 3 para pular migrações e não habilite
+`create`, `create-drop` ou `update` em produção. A operação `clean` do Flyway está
+desabilitada. O Hibernate valida tabelas/colunas, mas não substitui a conferência
+das constraints em um banco legado modificado manualmente.
+
+Os testes automatizados verificam banco vazio, atualização de V1 com registros,
+adoção do schema criado pelo Hibernate com chamados e mensagens, continuidade
+dos IDs e reinicialização sem reaplicar migrações. São executados em H2 no modo
+PostgreSQL; isso não substitui a homologação em uma cópia PostgreSQL do ambiente.
 
 ## Como testar
 
