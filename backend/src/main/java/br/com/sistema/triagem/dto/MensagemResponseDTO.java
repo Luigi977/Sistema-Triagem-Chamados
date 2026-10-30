@@ -10,12 +10,12 @@ public record MensagemResponseDTO(
         String conteudo,
         String tipo,
         LocalDateTime dataEnvio,
-        String identificadorExterno) {
+        String identificadorExterno, Long autorId) {
 
     public static MensagemResponseDTO from(Mensagem mensagem) {
         return new MensagemResponseDTO(
                 mensagem.getId(), mensagem.getChamado().getId(), mensagem.getRemetente(),
                 mensagem.getConteudo(), mensagem.getTipo(), mensagem.getDataEnvio(),
-                mensagem.getIdentificadorExterno());
+                mensagem.getIdentificadorExterno(), mensagem.getAutorId());
     }
 }

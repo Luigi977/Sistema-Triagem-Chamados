@@ -63,6 +63,11 @@ public class Chamado {
     @Column(name = "solucao_aplicada", columnDefinition = "TEXT")
     private String solucaoAplicada;
 
+    @Column(name = "responsavel_id")
+    private Long responsavelId;
+    public Long getResponsavelId() { return responsavelId; }
+    public void setResponsavelId(Long id) { this.responsavelId = id; }
+
     public Chamado() {
     }
 

@@ -72,6 +72,10 @@ java -jar target/triagem-chamados-0.0.1-SNAPSHOT.jar
 
 Com a aplicação iniciada, o endpoint de verificação de saúde responde em `http://localhost:8080/health` e retorna `OK`.
 
+## Autenticação e autorização
+
+A API exige token Bearer. Configure o primeiro administrador com `TRIAGEM_ADMIN_LOGIN` e `TRIAGEM_ADMIN_PASSWORD`, faça login em `/api/auth/login` e use o token nas chamadas. Consulte o [contrato de acesso de técnicos](docs/acesso-tecnicos.md) para permissões, equipes, atribuição por ID e autoria.
+
 ## API de chamados
 
 Todas as rotas abaixo usam o prefixo `/api/chamados`. Os endpoints de listagem retornam páginas; use `page` (começando em zero), `size` e `sort` para controlar paginação e ordenação. A listagem geral aceita os filtros opcionais `status`, `telefone` (busca parcial), `prioridadeFinal` e `responsavel` (busca parcial).
@@ -85,7 +89,7 @@ Todas as rotas abaixo usam o prefixo `/api/chamados`. Os endpoints de listagem r
 | `GET` | `/api/chamados/cliente/{telefone}` | Lista chamados do cliente com o telefone informado. |
 | `PATCH` | `/api/chamados/{id}/status` | Altera para `ABERTO`, `EM_ATENDIMENTO` ou `AGUARDANDO_USUARIO`. |
 | `PATCH` | `/api/chamados/{id}/prioridade` | Define a prioridade final em `prioridadeFinal`. |
-| `PATCH` | `/api/chamados/{id}/responsavel` | Define o técnico em `responsavel`. |
+| `PATCH` | `/api/chamados/{id}/responsavel` | Define técnico ativo da equipe usando `responsavelId`. |
 | `PATCH` | `/api/chamados/{id}/detalhes` | Atualiza resumo, descrição, natureza, setor e canal informados; preserva campos omitidos/nulos. |
 | `PATCH` | `/api/chamados/{id}/equipe` | Define `equipe` como `N1` ou `N2`. |
 | `POST` | `/api/chamados/{id}/encerrar` | Encerra o chamado e exige `causaReal` e `solucaoAplicada`. |
@@ -105,7 +109,7 @@ Exemplos de corpos JSON:
 ```
 
 ```json
-{ "responsavel": "Técnico 1" }
+{ "responsavelId": 123 }
 ```
 
 ```json
@@ -160,7 +164,7 @@ Exemplo de registro:
 
 `dataEnvio` aceita data/hora ISO 8601 sem fuso, seguindo o padrão dos chamados; se nula ou omitida, usa a hora local do servidor. A precisão é truncada para microssegundos antes de persistir, mantendo registro e consulta consistentes. Integrações devem converter horários para o mesmo fuso antes do registro. `identificadorExterno` é opcional, tem limite de 255 caracteres, preserva maiúsculas/minúsculas e remove espaços nas extremidades; vazio equivale a ausente. O identificador tem unicidade global no banco, inclusive entre chamados diferentes e em requisições simultâneas. Uma repetição retorna `409 Conflict` e preserva a mensagem original; mensagens sem identificador podem ser registradas várias vezes.
 
-A resposta contém `id`, `chamadoId` e todos os campos do exemplo. Chamado ou mensagem inexistente retorna `404`; campos inválidos retornam `400`. O registro também permite associar histórico a chamados encerrados, sem alterar seus dados. A API persiste mensagens; recebimento automático por webhook, envio real de respostas pelo WhatsApp e identidade/autenticação do técnico ainda estão pendentes.
+A resposta contém `id`, `chamadoId`, `autorId` e todos os campos do exemplo. Chamado ou mensagem inexistente retorna `404`; campos inválidos retornam `400`. O registro também permite associar histórico a chamados encerrados, sem alterar seus dados. A API persiste mensagens; recebimento automático por webhook e envio real de respostas pelo WhatsApp ainda estão pendentes. Identidade, autenticação e autorização estão implementadas; `autorId` vem da sessão autenticada.
 
 O schema é gerenciado por migrações Flyway versionadas em `backend/src/main/resources/db/migration`. O Hibernate apenas valida sua compatibilidade (`ddl-auto=validate`). Veja o procedimento de migração abaixo.
 
@@ -169,6 +173,7 @@ O schema é gerenciado por migrações Flyway versionadas em `backend/src/main/r
 Flyway executa as migrações antes da validação do Hibernate: `V1` cria a estrutura
 original de chamados, `V2` adiciona os detalhes opcionais e `V3` cria mensagens,
 chave estrangeira, unicidade do identificador externo e índice do histórico.
+`V4` adiciona técnicos, sessões, autoria e vínculo de responsável por ID.
 Em banco vazio, basta iniciar a aplicação. O histórico e os checksums ficam em
 `flyway_schema_history`; não edite migrações já aplicadas, crie uma nova versão.
 
@@ -183,7 +188,7 @@ Para adotar um banco existente criado pelo Hibernate:
 3. Apenas na primeira inicialização, defina `SPRING_FLYWAY_BASELINE_ON_MIGRATE=true`.
    O baseline é **0**, permitindo executar todas as migrações. As tabelas/colunas
    já existentes são preservadas; os novos campos opcionais permanecem nulos.
-4. Confirme a inicialização, as versões 1–3 no histórico e os registros preservados.
+4. Confirme a inicialização, as versões 1–4 no histórico e os registros preservados.
    Remova a variável de baseline das próximas inicializações.
 
 O baseline automático fica desativado por padrão para impedir adoção acidental

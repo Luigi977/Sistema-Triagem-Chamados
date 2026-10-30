@@ -10,6 +10,10 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface ChamadoRepository extends JpaRepository<Chamado, Long>, JpaSpecificationExecutor<Chamado> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select c from Chamado c where c.id = :id")
+    Optional<Chamado> findForUpdate(@org.springframework.data.repository.query.Param("id") Long id);
+
     Page<Chamado> findByStatusIn(Collection<String> statuses, Pageable pageable);
 
     Page<Chamado> findByTelefoneCliente(String telefoneCliente, Pageable pageable);

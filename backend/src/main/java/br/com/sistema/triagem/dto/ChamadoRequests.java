@@ -23,7 +23,7 @@ public final class ChamadoRequests {
     public record AlterarPrioridadeRequest(String prioridadeFinal) {
     }
 
-    public record AtribuirResponsavelRequest(String responsavel) {
+    public record AtribuirResponsavelRequest(Long responsavelId) {
     }
 
     public record AtualizarDetalhesRequest(

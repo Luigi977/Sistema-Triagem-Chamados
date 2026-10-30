@@ -33,6 +33,11 @@ public class Mensagem {
     @Column(name = "identificador_externo", length = 255)
     private String identificadorExterno;
 
+    @Column(name = "autor_id")
+    private Long autorId;
+    public Long getAutorId() { return autorId; }
+    public void setAutorId(Long id) { this.autorId = id; }
+
     public Mensagem() {
     }
 

@@ -26,15 +26,18 @@ public class MensagemService {
 
     private final MensagemRepository mensagemRepository;
     private final ChamadoRepository chamadoRepository;
+    private final AcessoService acesso;
 
-    public MensagemService(MensagemRepository mensagemRepository, ChamadoRepository chamadoRepository) {
+    public MensagemService(MensagemRepository mensagemRepository, ChamadoRepository chamadoRepository, AcessoService acesso) {
         this.mensagemRepository = mensagemRepository;
         this.chamadoRepository = chamadoRepository;
+        this.acesso = acesso;
     }
 
     public MensagemResponseDTO registrar(Long chamadoId, MensagemRequestDTO request) {
-        Chamado chamado = chamadoRepository.findById(chamadoId)
+        Chamado chamado = chamadoRepository.findForUpdate(chamadoId)
                 .orElseThrow(() -> chamadoNaoEncontrado(chamadoId));
+        acesso.editar(chamado);
         String remetente = required(request.remetente(), "remetente", 10).toUpperCase(Locale.ROOT);
         if (!REMETENTES.contains(remetente)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -46,6 +49,7 @@ public class MensagemService {
 
         Mensagem mensagem = new Mensagem();
         mensagem.setChamado(chamado);
+        mensagem.setAutorId(acesso.atual().id());
         mensagem.setRemetente(remetente);
         mensagem.setConteudo(request.conteudo());
         mensagem.setTipo(tipo);
@@ -54,7 +58,9 @@ public class MensagemService {
         mensagem.setIdentificadorExterno(identificadorExterno);
         
         try {
-            return MensagemResponseDTO.from(mensagemRepository.saveAndFlush(mensagem));
+            var salvo = mensagemRepository.saveAndFlush(mensagem);
+            acesso.registrar(chamado, "MENSAGEM");
+            return MensagemResponseDTO.from(salvo);
         } catch (DataIntegrityViolationException exception) {
             for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
                 if (cause instanceof ConstraintViolationException violation

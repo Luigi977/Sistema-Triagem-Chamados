@@ -49,7 +49,7 @@ A IA recomenda; a decisão final é do técnico. O estado da triagem deve ser se
 | Atendimento — tela 2 | Conversa cronológica, remetente, horário, envio de resposta e resultado do envio | Entidade e API de mensagens com histórico cronológico implementadas; interface e integração WhatsApp pendentes |
 | Cliente — tela 2 | Nome, telefone, setor, canal, abertura e histórico de chamados navegável | Nome, telefone, abertura e busca por telefone existem; faltam setor, canal e interface |
 | Triagem — telas 2 e 3, diagramas | Exibir natureza sugerida, prioridade e hipóteses de causa; aceitar ou editar; registrar autor, data e alterações | Só existem campos de prioridade sugerida/final; falta o restante do processo |
-| Encaminhamento — tela 1 e fluxo | Atribuir técnico, encaminhar N1/N2 e acompanhar atendimento | Responsável é texto livre; faltam equipes, identidade do técnico e histórico de encaminhamento |
+| Encaminhamento — tela 1 e fluxo | Atribuir técnico, encaminhar N1/N2 e acompanhar atendimento | Implementado: técnicos autenticados, equipes N1/N2, responsável por ID e histórico com autor; veja acesso-tecnicos.md |
 | Encerramento — tela 4 | Informar causa real e solução aplicada, confirmar encerramento e preservar histórico | Causa real, status e data existem; falta solução aplicada |
 | Avaliação — tela 5 | Registrar correta, parcialmente útil ou incorreta; associar à sugestão e ao avaliador | Não implementado |
 | Indicadores da IA — tela 5 | Contar triagens avaliadas, sugestões úteis e as que precisam de revisão | Não implementado; definir como “parcialmente útil” entra nos totais |
@@ -77,7 +77,7 @@ Contratos HTTP de registro e leitura de mensagens estão documentados no README.
 - **Triagem:** estado, entrada analisada ou referência à entrada, natureza/prioridade/causas sugeridas, impacto, urgência, versão do modelo e momento da análise.
 - **Decisão:** valores finais, vínculo com a versão da triagem, técnico, data e registro das alterações. Justificativa é recomendada para rastreabilidade.
 - **Avaliação:** sugestão ou conjunto avaliado, categoria de utilidade, técnico e data; comentário é uma extensão recomendada.
-- **Técnico/equipe:** identidade, perfil, equipe N1/N2 e vínculo com responsáveis. O texto livre atual não autentica uma pessoa.
+- **Técnico/equipe:** identidade, perfil, equipe N1/N2 e vínculo com responsáveis. Implementado com login Bearer, perfis ADMIN/TECNICO, equipe N1/N2, vínculo por ID e autoria das operações.
 
 ## Regras a consolidar antes de implementar
 
@@ -95,7 +95,7 @@ Contratos HTTP de registro e leitura de mensagens estão documentados no README.
 
 Estes pontos são necessários à operação com dados reais, mas não aparecem integralmente nas telas:
 
-- Autenticação de técnicos e autorização por perfil/equipe; autenticação e validação do webhook.
+- Autenticação de técnicos e autorização por perfil/equipe implementadas; autenticação e validação do webhook permanecem pendentes.
 - Idempotência de eventos, tratamento de eventos fora de ordem e reenvio controlado de mensagens.
 - Falha da IA não bloquear atendimento manual; timeout e opção de nova tentativa com rastreabilidade.
 - Validação de entradas, mensagens de erro consistentes e proteção contra atualizações concorrentes da triagem.

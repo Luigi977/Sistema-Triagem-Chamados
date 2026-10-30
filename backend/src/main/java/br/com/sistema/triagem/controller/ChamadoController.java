@@ -63,6 +63,11 @@ public class ChamadoController {
         return chamadoService.buscarPorTelefone(telefone, pageable);
     }
 
+    @GetMapping("/{id}/operacoes")
+    public java.util.List<br.com.sistema.triagem.service.AcessoService.Operacao> operacoes(@PathVariable Long id) {
+        return chamadoService.operacoes(id);
+    }
+
     @PatchMapping("/{id}/status")
     public Chamado alterarStatus(@PathVariable Long id, @RequestBody AlterarStatusRequest request) {
         return chamadoService.alterarStatus(id, request.status());
@@ -77,7 +82,7 @@ public class ChamadoController {
     @PatchMapping("/{id}/responsavel")
     public Chamado atribuirResponsavel(
             @PathVariable Long id, @RequestBody AtribuirResponsavelRequest request) {
-        return chamadoService.atribuirResponsavel(id, request.responsavel());
+        return chamadoService.atribuirResponsavel(id, request.responsavelId());
     }
 
     @PatchMapping("/{id}/detalhes")

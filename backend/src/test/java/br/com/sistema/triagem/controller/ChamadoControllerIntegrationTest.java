@@ -22,14 +22,18 @@ import org.springframework.test.web.servlet.MockMvc;
     "spring.datasource.password=",
     "spring.jpa.hibernate.ddl-auto=validate"
 })
+@org.springframework.security.test.context.support.WithMockUser(username = "admin", roles = "ADMIN")
 @AutoConfigureMockMvc
 class ChamadoControllerIntegrationTest {
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
     @Autowired ObjectMapper mapper;
     @Autowired ChamadoRepository repository;
 
     @BeforeEach
     void limparBanco() {
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM tecnicos WHERE login='admin'", Integer.class) == 0)
+            jdbc.update("INSERT INTO tecnicos(login,nome,senha_hash,perfil,equipe) VALUES ('admin','Admin teste','nao-utilizado','ADMIN','N1')");
         repository.deleteAll();
     }
 
