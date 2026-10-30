@@ -30,9 +30,11 @@ public class ChamadoService {
     private static final Set<String> CANAIS = Set.of("WHATSAPP", "MANUAL");
 
     private final ChamadoRepository chamadoRepository;
+    private final AcessoService acesso;
 
-    public ChamadoService(ChamadoRepository chamadoRepository) {
+    public ChamadoService(ChamadoRepository chamadoRepository, AcessoService acesso) {
         this.chamadoRepository = chamadoRepository;
+        this.acesso = acesso;
     }
 
     public Chamado criarChamado(CriarChamadoRequest request) {
@@ -47,6 +49,10 @@ public class ChamadoService {
         chamado.setSetor(optional(request.setor(), "setor", 150));
         chamado.setCanal(request.canal() == null ? "MANUAL" : category(request.canal(), "canal", CANAIS));
         chamado.setEquipe(optionalCategory(request.equipe(), "equipe", EQUIPES));
+        if (!"ADMIN".equals(acesso.atual().perfil())) {
+            if (chamado.getEquipe() == null) chamado.setEquipe(acesso.atual().equipe());
+            acesso.editar(chamado);
+        }
         chamado.setStatus("ABERTO");
         chamado.setDataAbertura(LocalDateTime.now());
 
@@ -54,7 +60,9 @@ public class ChamadoService {
                 .filter(anterior -> "ENCERRADO".equals(anterior.getStatus()))
                 .ifPresent(anterior -> chamado.setChamadoAnteriorId(anterior.getId()));
 
-        return chamadoRepository.save(chamado);
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "CRIACAO");
+        return salvo;
     }
 
     @Transactional(readOnly = true)
@@ -111,7 +119,8 @@ public class ChamadoService {
     }
 
     public Chamado alterarStatus(Long id, String status) {
-        Chamado chamado = buscarPorId(id);
+        Chamado chamado = chamadoRepository.findForUpdate(id).orElseThrow(() -> notFound(id));
+        acesso.editar(chamado);
         if ("ENCERRADO".equals(chamado.getStatus())) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT, "Chamado encerrado não pode ser alterado. Abra um novo chamado.");
@@ -124,43 +133,71 @@ public class ChamadoService {
         }
 
         chamado.setStatus(novoStatus);
-        return chamadoRepository.save(chamado);
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "STATUS");
+        return salvo;
     }
 
     public Chamado alterarPrioridadeFinal(Long id, String prioridadeFinal) {
-        Chamado chamado = buscarPorId(id);
+        Chamado chamado = chamadoRepository.findForUpdate(id).orElseThrow(() -> notFound(id));
+        acesso.editar(chamado);
         validarNaoEncerrado(chamado);
         chamado.setPrioridadeFinal(category(prioridadeFinal, "prioridadeFinal", PRIORIDADES));
-        return chamadoRepository.save(chamado);
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "PRIORIDADE");
+        return salvo;
     }
 
-    public Chamado atribuirResponsavel(Long id, String responsavel) {
-        Chamado chamado = buscarPorId(id);
+    public Chamado atribuirResponsavel(Long id, Long responsavelId) {
+        Chamado chamado = chamadoRepository.findForUpdate(id).orElseThrow(() -> notFound(id));
+        acesso.editar(chamado);
         validarNaoEncerrado(chamado);
-        chamado.setResponsavel(required(responsavel, "responsavel", 150));
-        return chamadoRepository.save(chamado);
+        if (responsavelId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "responsavelId obrigatorio");
+        var tecnico = acesso.buscar(responsavelId);
+        if (!tecnico.ativo() || !tecnico.equipe().equals(chamado.getEquipe()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tecnico inativo ou de outra equipe");
+        if (!"ADMIN".equals(acesso.atual().perfil()) && !acesso.atual().id().equals(responsavelId))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        chamado.setResponsavelId(responsavelId);
+        chamado.setResponsavel(tecnico.nome());
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "ATRIBUICAO");
+        return salvo;
     }
 
     public Chamado atualizarDetalhes(Long id, AtualizarDetalhesRequest request) {
-        Chamado chamado = buscarPorId(id);
+        Chamado chamado = chamadoRepository.findForUpdate(id).orElseThrow(() -> notFound(id));
+        acesso.editar(chamado);
         validarNaoEncerrado(chamado);
         if (request.resumo() != null) chamado.setResumo(required(request.resumo(), "resumo", 200));
         if (request.descricao() != null) chamado.setDescricao(required(request.descricao(), "descricao", 10000));
         if (request.natureza() != null) chamado.setNatureza(category(request.natureza(), "natureza", NATUREZAS));
         if (request.setor() != null) chamado.setSetor(required(request.setor(), "setor", 150));
         if (request.canal() != null) chamado.setCanal(category(request.canal(), "canal", CANAIS));
-        return chamadoRepository.save(chamado);
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "DETALHES");
+        return salvo;
     }
 
     public Chamado alterarEquipe(Long id, String equipe) {
-        Chamado chamado = buscarPorId(id);
+        Chamado chamado = chamadoRepository.findForUpdate(id).orElseThrow(() -> notFound(id));
+        acesso.editar(chamado);
         validarNaoEncerrado(chamado);
-        chamado.setEquipe(category(equipe, "equipe", EQUIPES));
-        return chamadoRepository.save(chamado);
+        acesso.admin();
+        String novaEquipe = category(equipe, "equipe", EQUIPES);
+        if (!novaEquipe.equals(chamado.getEquipe())) {
+            chamado.setResponsavelId(null);
+            chamado.setResponsavel(null);
+        }
+        chamado.setEquipe(novaEquipe);
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "EQUIPE");
+        return salvo;
     }
 
     public Chamado encerrarChamado(Long id, String causaReal, String solucaoAplicada) {
-        Chamado chamado = buscarPorId(id);
+        Chamado chamado = chamadoRepository.findForUpdate(id).orElseThrow(() -> notFound(id));
+        acesso.editar(chamado);
         if ("ENCERRADO".equals(chamado.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "O chamado já está encerrado.");
         }
@@ -171,7 +208,15 @@ public class ChamadoService {
         chamado.setSolucaoAplicada(solucao);
         chamado.setStatus("ENCERRADO");
         chamado.setDataEncerramento(LocalDateTime.now());
-        return chamadoRepository.save(chamado);
+        Chamado salvo = chamadoRepository.saveAndFlush(chamado);
+        acesso.registrar(salvo, "ENCERRAMENTO");
+        return salvo;
+    }
+
+    @Transactional(readOnly = true)
+    public java.util.List<AcessoService.Operacao> operacoes(Long id) {
+        buscarPorId(id);
+        return acesso.historico(id);
     }
 
     private static void validarNaoEncerrado(Chamado chamado) {

@@ -25,8 +25,10 @@ class ChamadoServiceTest {
         ReflectionTestUtils.setField(anterior, "id", 42L);
         when(repository.findFirstByTelefoneClienteOrderByDataAberturaDesc("11999990000"))
                 .thenReturn(Optional.of(anterior));
-        when(repository.save(any(Chamado.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        ChamadoService service = new ChamadoService(repository);
+        when(repository.saveAndFlush(any(Chamado.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        AcessoService acesso = mock(AcessoService.class);
+        when(acesso.atual()).thenReturn(new AcessoService.Tecnico(1L, "admin", "Admin", "ADMIN", "N1", true));
+        ChamadoService service = new ChamadoService(repository, acesso);
 
         Chamado chamado = service.criarChamado(new CriarChamadoRequest(
                 "11999990000", "Cliente", "ALTA", null, null, null, null, null, null));
@@ -43,8 +45,10 @@ class ChamadoServiceTest {
         Chamado encerrado = new Chamado();
         encerrado.setTelefoneCliente("11999990000");
         encerrado.setStatus("ENCERRADO");
-        when(repository.findById(1L)).thenReturn(Optional.of(encerrado));
-        ChamadoService service = new ChamadoService(repository);
+        when(repository.findForUpdate(1L)).thenReturn(Optional.of(encerrado));
+        AcessoService acesso = mock(AcessoService.class);
+        when(acesso.atual()).thenReturn(new AcessoService.Tecnico(1L, "admin", "Admin", "ADMIN", "N1", true));
+        ChamadoService service = new ChamadoService(repository, acesso);
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class, () -> service.alterarStatus(1L, "EM_ATENDIMENTO"));

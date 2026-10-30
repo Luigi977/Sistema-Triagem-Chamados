@@ -2,11 +2,18 @@
   "info": {
     "_postman_id": "8a3c5561-f935-4144-a6d5-a537bc146453",
     "name": "Sistema de Triagem de Chamados — Testes da API",
-    "description": "Regressão dos endpoints implementados. Execute todas as pastas na ordem. A primeira criação gera dados fictícios novos e limpa os IDs anteriores. Configure baseUrl sem barra final. Cada iteração cria 3 chamados e 5 mensagens e encerra o chamado principal. Não há endpoint DELETE para limpeza; use um banco de desenvolvimento/teste. Não envia mensagens reais pelo WhatsApp. Para requisições avulsas, execute primeiro as etapas que criam seus dados. Atualizar esta coleção a cada mudança da API. Instruções: docs/postman/README.md.",
+    "description": "Coleção sequencial com autenticação Bearer, técnicos, equipes, chamados, mensagens e autoria. Configure adminLogin e adminPassword apenas no ambiente local. Tokens e credenciais sintéticas são variáveis locais da execução.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
-    "type": "noauth"
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
@@ -90,6 +97,344 @@
   ],
   "item": [
     {
+      "name": "00 — Autenticacao e tecnicos",
+      "item": [
+        {
+          "name": "Login administrador",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{adminLogin}}\",\n  \"senha\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const suffix = pm.variables.replaceIn('{{$guid}}');",
+                  "pm.variables.set('loginN1', 'n1-' + suffix); pm.variables.set('loginN2', 'n2-' + suffix);",
+                  "pm.variables.set('senhaTeste', 'Sintetica!' + pm.variables.replaceIn('{{$guid}}'));",
+                  "['adminToken','tokenN1','tokenN2','tecnicoN1Id','tecnicoN2Id','acessoChamadoId'].forEach(k => pm.variables.unset(k));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.variables.set('adminToken', pm.response.json().token);",
+                  "pm.variables.set('adminId', pm.response.json().tecnico.id);",
+                  "pm.test('Identidade sem segredo', () => pm.expect(pm.response.json().tecnico).not.to.have.property('senha'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar acesso anonimo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/chamados",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar senha incorreta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN1}}\",\n  \"senha\": \"incorreta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar identidade",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Administrador autenticado',()=>pm.expect(pm.response.json().id).eql(Number(pm.variables.get('adminId'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar equipes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/equipes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Equipes',()=>pm.expect(pm.response.json()).eql(['N1','N2']));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastrar tecnico N1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/tecnicos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN1}}\",\n  \"nome\": \"Técnico Postman\",\n  \"senha\": \"{{senhaTeste}}\",\n  \"perfil\": \"TECNICO\",\n  \"equipe\": \"N1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.variables.set('tecnicoN1Id', pm.response.json().id);",
+                  "pm.test('Sem senha',()=>{pm.expect(pm.response.json()).not.to.have.property('senha');pm.expect(pm.response.json()).not.to.have.property('senhaHash');});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login tecnico N1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN1}}\",\n  \"senha\": \"{{senhaTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.variables.set('tokenN1', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cadastrar tecnico N2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/tecnicos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN2}}\",\n  \"nome\": \"Técnico Postman\",\n  \"senha\": \"{{senhaTeste}}\",\n  \"perfil\": \"TECNICO\",\n  \"equipe\": \"N2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.variables.set('tecnicoN2Id', pm.response.json().id);",
+                  "pm.test('Sem senha',()=>{pm.expect(pm.response.json()).not.to.have.property('senha');pm.expect(pm.response.json()).not.to.have.property('senhaHash');});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login tecnico N2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN2}}\",\n  \"senha\": \"{{senhaTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.variables.set('tokenN2', pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar tecnico pelo ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tecnicos/{{tecnicoN1Id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tecnico criado',()=>pm.expect(pm.response.json().login).eql(pm.variables.get('loginN1')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar tecnicos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tecnicos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Inclui tecnico criado',()=>pm.expect(pm.response.json().map(t=>t.id)).include(Number(pm.variables.get('tecnicoN1Id'))));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "01 — Saúde",
       "description": "Confere se o backend está acessível.",
       "item": [
@@ -107,7 +452,10 @@
                 "health"
               ]
             },
-            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias."
+            "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
+            "auth": {
+              "type": "noauth"
+            }
           },
           "event": [
             {
@@ -589,7 +937,7 @@
             "description": "Espera HTTP 200. Execute na ordem da coleção para preencher as variáveis necessárias.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"responsavel\": \" Técnico Postman \"\n}",
+              "raw": "{\"responsavelId\":{{tecnicoN1Id}}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -717,12 +1065,47 @@
                   "pm.test(\"Equipe normalizada\", function () {",
                   "const data = pm.response.json();",
                   "pm.expect(data.equipe).to.eql(\"N2\");",
-                  "});"
+                  "});",
+                  "pm.test('Transferencia remove responsavel',()=>{pm.expect(pm.response.json().responsavelId).eql(null);pm.expect(pm.response.json().responsavel).eql(null);});"
                 ]
               }
             }
           ],
           "response": []
+        },
+        {
+          "name": "Atribuir tecnico N2 apos encaminhamento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{chamadoId}}/responsavel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"responsavelId\":{{tecnicoN2Id}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Vinculo por ID',()=>pm.expect(pm.response.json().responsavelId).eql(Number(pm.variables.get('tecnicoN2Id'))));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "13 — Filtrar por status, telefone, prioridade e responsável",
@@ -1164,7 +1547,7 @@
             "description": "Espera HTTP 400. Execute na ordem da coleção para preencher as variáveis necessárias.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"responsavel\": \" \"\n}",
+              "raw": "{\"responsavelId\":null}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1654,7 +2037,8 @@
                   "pm.expect(data.conteudo).to.eql(\"  Meu computador não liga.\\nPreciso de ajuda.  \");",
                   "pm.expect(data.dataEnvio).to.eql(\"2026-01-01T10:00:00.123456\");",
                   "pm.expect(data.identificadorExterno).to.eql(pm.collectionVariables.get(\"identificadorExternoTeste\"));",
-                  "});"
+                  "});",
+                  "if(pm.response.code===201) pm.test('Autor autenticado',()=>pm.expect(pm.response.json().autorId).eql(Number(pm.variables.get('adminId'))));"
                 ]
               }
             }
@@ -1710,7 +2094,8 @@
                   "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
                   "pm.expect(data.remetente).to.eql(\"TECNICO\");",
                   "pm.expect(data.identificadorExterno).to.eql(null);",
-                  "});"
+                  "});",
+                  "if(pm.response.code===201) pm.test('Autor autenticado',()=>pm.expect(pm.response.json().autorId).eql(Number(pm.variables.get('adminId'))));"
                 ]
               }
             }
@@ -1766,7 +2151,8 @@
                   "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
                   "pm.expect(data.remetente).to.eql(\"SISTEMA\");",
                   "pm.expect(data.tipo).to.eql(\"EVENTO\");",
-                  "});"
+                  "});",
+                  "if(pm.response.code===201) pm.test('Autor autenticado',()=>pm.expect(pm.response.json().autorId).eql(Number(pm.variables.get('adminId'))));"
                 ]
               }
             }
@@ -2041,7 +2427,8 @@
                   "pm.expect(pm.response.headers.get('Location')).to.match(new RegExp(\"/api/mensagens/\" + data.id + '$'));",
                   "pm.expect(data.identificadorExterno).to.eql(null);",
                   "pm.expect(data.dataEnvio).to.match(/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}/);",
-                  "});"
+                  "});",
+                  "if(pm.response.code===201) pm.test('Autor autenticado',()=>pm.expect(pm.response.json().autorId).eql(Number(pm.variables.get('adminId'))));"
                 ]
               }
             }
@@ -2093,7 +2480,8 @@
                   "pm.test(\"Associa ao outro chamado\", function () {",
                   "const data = pm.response.json();",
                   "pm.expect(data.chamadoId).to.eql(Number(pm.collectionVariables.get(\"outroChamadoId\")));",
-                  "});"
+                  "});",
+                  "if(pm.response.code===201) pm.test('Autor autenticado',()=>pm.expect(pm.response.json().autorId).eql(Number(pm.variables.get('adminId'))));"
                 ]
               }
             }
@@ -2923,7 +3311,7 @@
             "description": "Espera HTTP 409. Execute na ordem da coleção para preencher as variáveis necessárias.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"responsavel\": \"Outro técnico\"\n}",
+              "raw": "{\"responsavelId\":{{tecnicoN1Id}}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3293,6 +3681,616 @@
             }
           ],
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 — Acesso negado, atribuicao e autoria",
+      "item": [
+        {
+          "name": "Criar chamado de autorizacao",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{telefoneTeste}}\",\n  \"equipe\": \"N1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.variables.set('acessoChamadoId', pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar cadastro por tecnico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/tecnicos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN1}}\",\n  \"nome\": \"Escalada\",\n  \"senha\": \"{{senhaTeste}}\",\n  \"perfil\": \"ADMIN\",\n  \"equipe\": \"N1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar escrita fora da equipe",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"EM_ATENDIMENTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar mensagem fora da equipe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/mensagens",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remetente\": \"TECNICO\",\n  \"tipo\": \"TEXTO\",\n  \"conteudo\": \"Negada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rejeitar responsavel de outra equipe",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/responsavel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"responsavelId\":{{tecnicoN2Id}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rejeitar responsavel inexistente",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/responsavel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"responsavelId\":-1}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Assumir chamado",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/responsavel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"responsavelId\":{{tecnicoN1Id}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Responsavel autenticado',()=>pm.expect(pm.response.json().responsavelId).eql(Number(pm.variables.get('tecnicoN1Id'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar encaminhamento por tecnico",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/equipe",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"equipe\": \"N2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirmar preservacao apos negativas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const d=pm.response.json(); pm.test('Dados preservados',()=>{pm.expect(d.status).eql('ABERTO');pm.expect(d.equipe).eql('N1');pm.expect(d.responsavelId).eql(Number(pm.variables.get('tecnicoN1Id')));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mensagem registra autor real",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/mensagens",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"remetente\":\"TECNICO\",\"tipo\":\"TEXTO\",\"conteudo\":\"Teste de autoria\",\"autorId\":{{adminId}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Autor nao pode ser forjado',()=>pm.expect(pm.response.json().autorId).eql(Number(pm.variables.get('tecnicoN1Id'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Consultar autores das operacoes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/operacoes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Somente operacoes aceitas',()=>{const d=pm.response.json();pm.expect(d.length).eql(3);d.forEach(o=>pm.expect(o.autorId).eql(Number(pm.variables.get('tecnicoN1Id'))));});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Desativar tecnico",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/tecnicos/{{tecnicoN1Id}}/desativar"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Inativo',()=>pm.expect(pm.response.json().ativo).eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar token de tecnico desativado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar login desativado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginN1}}\",\n  \"senha\": \"{{senhaTeste}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rejeitar atribuicao a inativo",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/chamados/{{acessoChamadoId}}/responsavel",
+            "body": {
+              "mode": "raw",
+              "raw": "{\"responsavelId\":{{tecnicoN1Id}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Encerrar sessao",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/logout",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Negar token revogado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Encerrar sessao administrativa",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/logout"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

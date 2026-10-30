@@ -33,9 +33,11 @@ import org.springframework.test.web.servlet.MockMvc;
     "spring.jpa.open-in-view=false",
     "spring.jpa.show-sql=false"
 })
+@org.springframework.security.test.context.support.WithMockUser(username = "admin", roles = "ADMIN")
 @AutoConfigureMockMvc
 class MensagemControllerIntegrationTest {
     @Autowired MockMvc mvc;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
     @Autowired ObjectMapper mapper;
     @Autowired ChamadoRepository chamados;
     @Autowired MensagemRepository mensagens;
@@ -44,6 +46,8 @@ class MensagemControllerIntegrationTest {
 
     @BeforeEach
     void prepararBanco() {
+        if (jdbc.queryForObject("SELECT COUNT(*) FROM tecnicos WHERE login='admin'", Integer.class) == 0)
+            jdbc.update("INSERT INTO tecnicos(login,nome,senha_hash,perfil,equipe) VALUES ('admin','Admin teste','nao-utilizado','ADMIN','N1')");
         mensagens.deleteAll();
         chamados.deleteAll();
         chamadoId = criarChamado();
@@ -164,6 +168,7 @@ class MensagemControllerIntegrationTest {
                 prontas.countDown();
                 assertThat(iniciar.await(5, TimeUnit.SECONDS)).isTrue();
                 return mvc.perform(post("/api/chamados/{id}/mensagens", chamadoId)
+                                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("admin").roles("ADMIN"))
                                 .contentType(MediaType.APPLICATION_JSON).content(json))
                         .andReturn().getResponse().getStatus();
             };
