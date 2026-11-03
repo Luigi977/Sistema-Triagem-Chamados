@@ -8,6 +8,16 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.vite/
+coverage/
+*.tsbuildinfo
+test-results/
+playwright-report/
+blob-report/
+artifacts/
+.env
+.env.*
+!.env.example
 dist
 dist-ssr
 *.local

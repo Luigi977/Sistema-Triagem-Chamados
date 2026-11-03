@@ -1,0 +1,52 @@
+import type { Chamado, Mensagem, Page, Tecnico } from '../src/types/api'
+export const tecnico: Tecnico = {
+  id: 91,
+  login: 'laboratorio',
+  nome: 'Técnica de laboratório',
+  perfil: 'TECNICO',
+  equipe: 'N1',
+  ativo: true,
+}
+export const chamado: Chamado = {
+  id: 701,
+  nomeCliente: 'Cliente fictício',
+  telefoneCliente: '5500000000000',
+  contatoWhatsappId: null,
+  chamadoAnteriorId: null,
+  status: 'ABERTO',
+  prioridadeSugerida: null,
+  prioridadeFinal: null,
+  responsavel: null,
+  responsavelId: null,
+  causaReal: null,
+  solucaoAplicada: null,
+  dataAbertura: '2026-11-03T10:00:00',
+  dataEncerramento: null,
+  resumo: 'Cenário de laboratório',
+  descricao: null,
+  natureza: 'INCIDENTE',
+  setor: null,
+  canal: 'MANUAL',
+  equipe: 'N1',
+}
+export const message: Mensagem = {
+  id: 401,
+  chamadoId: 701,
+  remetente: 'TECNICO',
+  conteudo: 'Texto de laboratório',
+  tipo: 'TEXTO',
+  dataEnvio: '2026-11-03T10:00:00',
+  identificadorExterno: null,
+  autorId: 91,
+}
+export const page = <T>(content: T[]): Page<T> => ({
+  content,
+  number: 0,
+  size: 10,
+  totalElements: content.length,
+  totalPages: content.length ? 1 : 0,
+  first: true,
+  last: true,
+  numberOfElements: content.length,
+  empty: !content.length,
+})
