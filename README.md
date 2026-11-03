@@ -1,5 +1,7 @@
 # Backend
 
+Para iniciar a aplicação com Evolution API real em Docker, execute `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-stack.ps1` e siga o [guia Docker](docs/docker.md).
+
 API do Sistema de Triagem de Chamados, desenvolvida com Java, Spring Boot e Maven.
 
 ## Dependências
@@ -74,7 +76,7 @@ Com a aplicação iniciada, o endpoint de verificação de saúde responde em `h
 
 ## Autenticação e autorização
 
-A API exige token Bearer. Configure o primeiro administrador com `TRIAGEM_ADMIN_LOGIN` e `TRIAGEM_ADMIN_PASSWORD`, faça login em `/api/auth/login` e use o token nas chamadas. Consulte o [contrato de acesso de técnicos](docs/acesso-tecnicos.md) para permissões, equipes, atribuição por ID e autoria.
+As rotas do painel exigem token Bearer. Configure o primeiro administrador com `TRIAGEM_ADMIN_LOGIN` e `TRIAGEM_ADMIN_PASSWORD`, faça login em `/api/auth/login` e use o token nas chamadas. O webhook Evolution usa seu segredo próprio. Consulte o [contrato de acesso de técnicos](docs/acesso-tecnicos.md) para permissões, equipes, atribuição por ID e autoria.
 
 ## API de chamados
 
@@ -132,7 +134,7 @@ Exemplo de abertura completa:
 }
 ```
 
-Categorias da API: natureza `INCIDENTE`, `REQUISICAO` ou `DUVIDA`; prioridade `BAIXA`, `MEDIA`, `ALTA` ou `CRITICA`; canal `MANUAL` ou `WHATSAPP`; equipe `N1` ou `N2`. São normalizadas para maiúsculas e rejeitam valores desconhecidos. `MANUAL` é o canal padrão se omitido. Informar `WHATSAPP` registra o canal; a integração com o provedor WhatsApp será implementada em outra etapa.
+Categorias da API: natureza `INCIDENTE`, `REQUISICAO` ou `DUVIDA`; prioridade `BAIXA`, `MEDIA`, `ALTA` ou `CRITICA`; canal `MANUAL` ou `WHATSAPP`; equipe `N1` ou `N2`. São normalizadas para maiúsculas e rejeitam valores desconhecidos. `MANUAL` é o canal padrão se omitido. O recebimento e envio pelo canal `WHATSAPP` dependem da configuração da Evolution descrita abaixo.
 
 Limites: resumo 200 caracteres, setor e nome 150, descrição/causa/solução 10.000. A edição de detalhes preserva campos nulos/omitidos e rejeita textos vazios; não permite limpar um campo nesta versão. Dados opcionais antigos podem permanecer nulos.
 
@@ -164,7 +166,15 @@ Exemplo de registro:
 
 `dataEnvio` aceita data/hora ISO 8601 sem fuso, seguindo o padrão dos chamados; se nula ou omitida, usa a hora local do servidor. A precisão é truncada para microssegundos antes de persistir, mantendo registro e consulta consistentes. Integrações devem converter horários para o mesmo fuso antes do registro. `identificadorExterno` é opcional, tem limite de 255 caracteres, preserva maiúsculas/minúsculas e remove espaços nas extremidades; vazio equivale a ausente. O identificador tem unicidade global no banco, inclusive entre chamados diferentes e em requisições simultâneas. Uma repetição retorna `409 Conflict` e preserva a mensagem original; mensagens sem identificador podem ser registradas várias vezes.
 
-A resposta contém `id`, `chamadoId`, `autorId` e todos os campos do exemplo. Chamado ou mensagem inexistente retorna `404`; campos inválidos retornam `400`. O registro também permite associar histórico a chamados encerrados, sem alterar seus dados. A API persiste mensagens; recebimento automático por webhook e envio real de respostas pelo WhatsApp ainda estão pendentes. Identidade, autenticação e autorização estão implementadas; `autorId` vem da sessão autenticada.
+A resposta contém `id`, `chamadoId`, `autorId` e todos os campos do exemplo. Chamado ou mensagem inexistente retorna `404`; campos inválidos retornam `400`. O registro também permite associar histórico a chamados encerrados, sem alterar seus dados. Identidade, autenticação e autorização estão implementadas; `autorId` vem da sessão autenticada. Mensagens recebidas automaticamente pela integração usam autoria nula.
+
+## Integração WhatsApp / Evolution API
+
+A Etapa 04 implementa `POST /api/webhooks/evolution`, `GET /api/whatsapp/status` e `POST /api/chamados/{id}/responder` com corpo `{"texto":"Resposta do técnico"}`. Configure `EVOLUTION_ENABLED`, URL, instância, chave e segredo do webhook no backend; a integração fica desativada por padrão. Veja o [contrato e guia de configuração](docs/evolution-api.md).
+
+O webhook autentica a origem e grava uma inbox PostgreSQL antes de confirmar o recebimento. O worker retoma pendências após reinício e registra mensagens no chamado ativo, criando um novo atendimento vinculado ao anterior após encerramento. JIDs `@lid` permanecem separados de telefones: chamados recebidos somente por LID podem ter `telefoneCliente=null` e expõem `contatoWhatsappId`. Respostas respeitam a equipe/permissão do técnico e deduplicam o eco pelo ID externo.
+
+A [implantação Docker](docs/docker.md) executa a Evolution real junto do backend, prepara a instância/webhook e oferece conexão pelo QR Code em `/whatsapp.html`. Os [cenários Postman](docs/postman/README.md) mantêm a regressão em ambiente isolado. Nenhuma chave do provedor é enviada ao painel. A futura classificação por IA continua fora desta etapa.
 
 O schema é gerenciado por migrações Flyway versionadas em `backend/src/main/resources/db/migration`. O Hibernate apenas valida sua compatibilidade (`ddl-auto=validate`). Veja o procedimento de migração abaixo.
 
@@ -174,6 +184,7 @@ Flyway executa as migrações antes da validação do Hibernate: `V1` cria a est
 original de chamados, `V2` adiciona os detalhes opcionais e `V3` cria mensagens,
 chave estrangeira, unicidade do identificador externo e índice do histórico.
 `V4` adiciona técnicos, sessões, autoria e vínculo de responsável por ID.
+`V5` adiciona contatos/JIDs, inbox durável da Evolution e o vínculo do chamado ao contato WhatsApp, permitindo telefone nulo para LID.
 Em banco vazio, basta iniciar a aplicação. O histórico e os checksums ficam em
 `flyway_schema_history`; não edite migrações já aplicadas, crie uma nova versão.
 

@@ -65,6 +65,32 @@ public class ChamadoService {
         return salvo;
     }
 
+    /** Chamado do canal autenticado, sem representar o cliente como um técnico. */
+    public Chamado receberWhatsapp(EvolutionStore.Contato contato, String nome, String texto, boolean fromMe) {
+        var historico = chamadoRepository.findHistoricoWhatsapp(contato.id(), contato.telefone());
+        var ativo = historico.stream().filter(c -> STATUS_ABERTOS.contains(c.getStatus())).findFirst();
+        if (ativo.isPresent()) {
+            Chamado chamado = chamadoRepository.findForUpdate(ativo.get().getId()).orElseThrow();
+            // O encerramento pode ter ocorrido entre a consulta e a aquisição do lock.
+            if (STATUS_ABERTOS.contains(chamado.getStatus())) {
+                chamado.setContatoWhatsappId(contato.id());
+                return chamadoRepository.saveAndFlush(chamado);
+            }
+        }
+        // Ecos e mensagens do próprio aparelho nunca abrem um atendimento.
+        if (fromMe) return null;
+        Chamado chamado = new Chamado();
+        chamado.setContatoWhatsappId(contato.id());
+        chamado.setTelefoneCliente(contato.telefone());
+        chamado.setNomeCliente(nome);
+        chamado.setCanal("WHATSAPP");
+        chamado.setEquipe("N1");
+        chamado.setResumo(texto.substring(0, Math.min(200, texto.length())));
+        chamado.setDescricao(texto);
+        if (!historico.isEmpty()) chamado.setChamadoAnteriorId(historico.getFirst().getId());
+        return chamadoRepository.saveAndFlush(chamado);
+    }
+
     @Transactional(readOnly = true)
     public Page<Chamado> listarChamados(
             String status, String telefone, String prioridadeFinal, String responsavel, Pageable pageable) {

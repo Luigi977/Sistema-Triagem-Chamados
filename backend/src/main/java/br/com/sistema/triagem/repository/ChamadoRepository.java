@@ -19,4 +19,11 @@ public interface ChamadoRepository extends JpaRepository<Chamado, Long>, JpaSpec
     Page<Chamado> findByTelefoneCliente(String telefoneCliente, Pageable pageable);
 
     Optional<Chamado> findFirstByTelefoneClienteOrderByDataAberturaDesc(String telefoneCliente);
+
+    @org.springframework.data.jpa.repository.Query("select c from Chamado c where "
+            + "c.contatoWhatsappId = :contato or (c.contatoWhatsappId is null and c.telefoneCliente = :telefone) "
+            + "order by c.dataAbertura desc, c.id desc")
+    java.util.List<Chamado> findHistoricoWhatsapp(
+            @org.springframework.data.repository.query.Param("contato") String contato,
+            @org.springframework.data.repository.query.Param("telefone") String telefone);
 }

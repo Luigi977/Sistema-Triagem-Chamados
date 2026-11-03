@@ -24,7 +24,10 @@ public class SecurityConfig {
             .requestCache(c -> c.disable())
             .authorizeHttpRequests(a -> a
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/health").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET,
+                        "/whatsapp.html", "/whatsapp.css", "/whatsapp.js").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/webhooks/evolution").permitAll()
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/**").authenticated().anyRequest().denyAll())
             .exceptionHandling(e -> e.authenticationEntryPoint((req,res,ex) -> res.sendError(401))
