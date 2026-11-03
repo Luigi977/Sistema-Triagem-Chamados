@@ -64,7 +64,7 @@ class DatabaseMigrationTest {
 
     @Test
     void criaBancoVazioCompativelComHibernate() {
-        assertEquals(4, flyway(false).migrate().migrationsExecuted);
+        assertEquals(5, flyway(false).migrate().migrationsExecuted);
         hibernate("validate");
         assertEquals(0, flyway(false).migrate().migrationsExecuted);
     }
@@ -74,7 +74,7 @@ class DatabaseMigrationTest {
         Flyway.configure().dataSource(url, "sa", "").target("1").load().migrate();
         try (var connection = DriverManager.getConnection(url, "sa", "")) {
             long id = insertChamado(connection);
-            assertEquals(3, flyway(false).migrate().migrationsExecuted);
+            assertEquals(4, flyway(false).migrate().migrationsExecuted);
             assertPreserved(connection, id);
         }
     }
@@ -86,7 +86,7 @@ class DatabaseMigrationTest {
              var statement = connection.createStatement()) {
             long id = insertChamado(connection);
             statement.executeUpdate("UPDATE chamados SET responsavel='Tecnico legado' WHERE id=" + id);
-            assertEquals(1, flyway(false).migrate().migrationsExecuted);
+            assertEquals(2, flyway(false).migrate().migrationsExecuted);
             try (var row = statement.executeQuery("SELECT responsavel, responsavel_id FROM chamados WHERE id=" + id)) {
                 assertTrue(row.next());
                 assertEquals("Tecnico legado", row.getString(1));
@@ -105,7 +105,7 @@ class DatabaseMigrationTest {
             statement.executeUpdate("INSERT INTO mensagens (chamado_id, remetente, conteudo, tipo, data_envio, identificador_externo) "
                     + "VALUES (" + id + ", 'CLIENTE', 'Mensagem ficticia', 'TEXTO', CURRENT_TIMESTAMP, 'fixture-unica')");
             assertThrows(FlywayException.class, () -> flyway(false).migrate());
-            assertEquals(4, flyway(true).migrate().migrationsExecuted);
+            assertEquals(5, flyway(true).migrate().migrationsExecuted);
             try (var row = statement.executeQuery("SELECT * FROM mensagens")) {
                 assertTrue(row.next());
                 assertEquals(id, row.getLong("chamado_id"));

@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface MensagemRepository extends JpaRepository<Mensagem, Long> {
 
     List<Mensagem> findByChamadoIdOrderByDataEnvioAscIdAsc(Long chamadoId);
+
+    java.util.Optional<Mensagem> findByIdentificadorExterno(String identificadorExterno);
 }

@@ -1,0 +1,130 @@
+name: triagem-chamados
+
+services:
+  banco:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: triagem_chamados
+      POSTGRES_USER: triagem
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD:?Execute scripts/start-stack.ps1}
+    volumes:
+      - triagem_dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U triagem -d triagem_chamados"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  evolution-banco:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution
+      POSTGRES_PASSWORD: ${DOCKER_EVOLUTION_DB_PASSWORD:?Execute scripts/start-stack.ps1}
+    volumes:
+      - evolution_dados:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evolution -d evolution"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - evolution_cache:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  evolution:
+    image: evoapicloud/evolution-api:v2.3.7
+    restart: unless-stopped
+    depends_on:
+      evolution-banco:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SERVER_TYPE: http
+      SERVER_PORT: "8080"
+      SERVER_URL: http://evolution:8080
+      AUTHENTICATION_API_KEY: ${DOCKER_EVOLUTION_API_KEY:?Execute scripts/start-stack.ps1}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "false"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://evolution:${DOCKER_EVOLUTION_DB_PASSWORD}@evolution-banco:5432/evolution?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: triagem
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "false"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/0
+      CACHE_REDIS_PREFIX_KEY: triagem
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      DEL_INSTANCE: "false"
+      TELEMETRY_ENABLED: "false"
+      LOG_LEVEL: ERROR,WARN
+      LOG_BAILEYS: error
+      CONFIG_SESSION_PHONE_CLIENT: Suporte Triagem
+      CONFIG_SESSION_PHONE_NAME: Chrome
+      LANGUAGE: pt-BR
+      TZ: America/Sao_Paulo
+    volumes:
+      - evolution_sessoes:/evolution/instances
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+      evolution:
+        condition: service_healthy
+    ports:
+      - "${TRIAGEM_BIND_ADDRESS:-127.0.0.1}:${TRIAGEM_HTTP_PORT:-8080}:8080"
+    environment:
+      SPRING_CONFIG_IMPORT: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://banco:5432/triagem_chamados
+      SPRING_DATASOURCE_USERNAME: triagem
+      SPRING_DATASOURCE_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: "false"
+      SPRING_JPA_OPEN_IN_VIEW: "false"
+      SPRING_JPA_SHOW_SQL: "false"
+      TRIAGEM_ADMIN_LOGIN: ${DOCKER_ADMIN_LOGIN:-admin}
+      TRIAGEM_ADMIN_PASSWORD: ${DOCKER_ADMIN_PASSWORD:?Execute scripts/start-stack.ps1}
+      EVOLUTION_ENABLED: "true"
+      EVOLUTION_MANAGED: "true"
+      EVOLUTION_API_URL: http://evolution:8080
+      EVOLUTION_INSTANCE: ${DOCKER_EVOLUTION_INSTANCE:-suporte}
+      EVOLUTION_API_KEY: ${DOCKER_EVOLUTION_API_KEY}
+      EVOLUTION_WEBHOOK_TOKEN: ${DOCKER_EVOLUTION_WEBHOOK_TOKEN:?Execute scripts/start-stack.ps1}
+      EVOLUTION_WEBHOOK_URL: http://backend:8080/api/webhooks/evolution
+      TZ: America/Sao_Paulo
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
+volumes:
+  triagem_dados:
+  evolution_dados:
+  evolution_cache:
+  evolution_sessoes:

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>WhatsApp · Triagem de chamados</title>
+  <link rel="stylesheet" href="/whatsapp.css"><script src="/whatsapp.js" defer></script>
+</head>
+<body><main>
+  <header><span class="marca">TRIAGEM / SUPORTE</span><span class="indicador" id="estado">Aguardando acesso</span></header>
+  <h1>WhatsApp da empresa</h1>
+  <p class="intro">Conecte o número de suporte para receber mensagens e abrir chamados automaticamente.</p>
+  <section id="acesso" class="card">
+    <h2>Acesso administrativo</h2>
+    <form id="login-form">
+      <label for="login">Login</label><input id="login" autocomplete="username" required>
+      <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+    </form>
+  </section>
+  <section id="conexao" class="card" hidden>
+    <div class="linha"><h2 id="instancia">Conexão</h2><button id="sair" class="secundario">Sair</button></div>
+    <p id="orientacao">Consultando o estado da conexão…</p>
+    <button id="conectar">Gerar QR Code</button>
+    <figure id="qr-area" hidden><img id="qr" alt="QR Code para conectar o WhatsApp do suporte" width="280" height="280">
+      <figcaption>No celular do suporte, abra WhatsApp → Aparelhos conectados → Conectar aparelho.</figcaption>
+    </figure>
+  </section>
+  <p id="aviso" role="status" aria-live="polite"></p>
+  <footer>As mensagens recebidas são registradas no sistema após a conexão do celular.</footer>
+</main></body></html>

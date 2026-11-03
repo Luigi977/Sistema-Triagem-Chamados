@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8a3c5561-f935-4144-a6d5-a537bc146453",
     "name": "Sistema de Triagem de Chamados — Testes da API",
-    "description": "Coleção sequencial com autenticação Bearer, técnicos, equipes, chamados, mensagens e autoria. Configure adminLogin e adminPassword apenas no ambiente local. Tokens e credenciais sintéticas são variáveis locais da execução.",
+    "description": "Coleção sequencial com autenticação Bearer, técnicos, equipes, chamados, mensagens e autoria. Configure adminLogin e adminPassword apenas no ambiente local. Tokens e credenciais sintéticas são variáveis locais da execução.\nEtapa 04: integração real Evolution em Docker e cenários de regressão isolados. Conexão administrativa por QR Code sem expor chaves.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -93,6 +93,30 @@
       "value": "-1",
       "type": "string",
       "description": "ID negativo, não gerado pelo banco."
+    },
+    {
+      "key": "evolutionTestsEnabled",
+      "value": "false",
+      "type": "string",
+      "description": "Ativa os cenários Evolution; exige backend configurado."
+    },
+    {
+      "key": "evolutionInstance",
+      "value": "",
+      "type": "string",
+      "description": "Nome da instância configurada no backend."
+    },
+    {
+      "key": "evolutionWebhookToken",
+      "value": "",
+      "type": "string",
+      "description": "Segredo privado do webhook; preencher somente localmente."
+    },
+    {
+      "key": "whatsappConnectionTestsEnabled",
+      "value": "false",
+      "type": "string",
+      "description": "Habilita testes de conexão real sem envio; exige modo gerenciado."
     }
   ],
   "item": [
@@ -3685,7 +3709,1273 @@
       ]
     },
     {
-      "name": "06 — Acesso negado, atribuicao e autoria",
+      "name": "06 — Evolution: recebimento, envio e continuidade",
+      "description": "Cenários sintéticos de regressão, exclusivamente em banco de teste. A aplicação usa Evolution real; falhas HTTP são verificadas na suíte Java.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(String(pm.variables.get('evolutionTestsEnabled'))!=='true')pm.execution.skipRequest();"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "Evolution — Consultar conexão",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "status"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const run=pm.variables.replaceIn('{{$guid}}');pm.variables.set('evoRun',run);pm.variables.set('evoPhone','5599'+Date.now().toString().slice(-9));pm.variables.set('evoLid','8'+Date.now());pm.variables.set('evoOnlyLid','9'+Date.now());pm.variables.set('evoMessage1',run+'-1');pm.variables.set('evoMessage2',run+'-2');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado e instância sem credenciais',()=>{const b=pm.response.json();pm.expect(b.instancia).to.eql(pm.variables.get('evolutionInstance'));pm.expect(['open','close','connecting']).to.include(b.estado);pm.expect(b).not.to.have.property('apikey');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Negar origem sem segredo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 401. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoMessage1}}\",\n      \"remoteJid\": \"{{evoPhone}}@s.whatsapp.net\",\n      \"remoteJidAlt\": \"{{evoLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Negar outra instância",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 403. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"outra-instancia-nao-autorizada\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoMessage1}}\",\n      \"remoteJid\": \"{{evoPhone}}@s.whatsapp.net\",\n      \"remoteJidAlt\": \"{{evoLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Rejeitar mensagem sem chave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 400. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Ignorar evento de conexão",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"connection.update\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ignorado',()=>pm.expect(pm.response.json().ignoradas).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Receber novo contato",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 202. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoMessage1}}\",\n      \"remoteJid\": \"{{evoPhone}}@s.whatsapp.net\",\n      \"remoteJidAlt\": \"{{evoLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Gravado na inbox',()=>pm.expect(pm.response.json().aceitas).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Deduplicar primeira mensagem",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoMessage1}}\",\n      \"remoteJid\": \"{{evoPhone}}@s.whatsapp.net\",\n      \"remoteJidAlt\": \"{{evoLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Duplicada',()=>pm.expect(pm.response.json().duplicadas).to.eql(1));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Capturar chamado criado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/cliente/{{evoPhone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "cliente",
+                "{{evoPhone}}"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const auth = {key:'Authorization',value:'Bearer '+pm.variables.get('adminToken')};",
+                  "function conferir(body, tentativa) {",
+                  "  if (body.content.length === 1) { const b=body.content[0];pm.variables.set('evoChamadoId',b.id);pm.test('Chamado N1 pelo WhatsApp',()=>{pm.expect(b.canal).to.eql('WHATSAPP');pm.expect(b.equipe).to.eql('N1');pm.expect(b.telefoneCliente).to.eql(pm.variables.get('evoPhone'));}); return; }",
+                  "  if(tentativa >= 50) { pm.test('Processamento assíncrono concluído',()=>pm.expect.fail('Estado esperado não apareceu em 5s')); return; }",
+                  "  setTimeout(()=>pm.sendRequest({url:pm.variables.replaceIn(pm.request.url.toString()),method:'GET',header:[auth]},(err,res)=>{",
+                  "    if(err) {pm.test('Consulta de acompanhamento',()=>pm.expect.fail(String(err)));return;}",
+                  "    conferir(res.json(),tentativa+1);",
+                  "  }),100);",
+                  "}",
+                  "conferir(pm.response.json(),0);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Continuar usando alias LID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 202. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoMessage2}}\",\n      \"remoteJid\": \"{{evoLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Conferir mensagens recebidas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const auth = {key:'Authorization',value:'Bearer '+pm.variables.get('adminToken')};",
+                  "function conferir(body, tentativa) {",
+                  "  if (body.length === 2) { pm.test('Duas mensagens do cliente, mesmo chamado',()=>body.forEach(m=>{pm.expect(m.chamadoId).to.eql(Number(pm.variables.get('evoChamadoId')));pm.expect(m.remetente).to.eql('CLIENTE');pm.expect(m.autorId).to.eql(null);pm.expect(m.conteudo).to.eql('Preciso de suporte sintético');})); return; }",
+                  "  if(tentativa >= 50) { pm.test('Processamento assíncrono concluído',()=>pm.expect.fail('Estado esperado não apareceu em 5s')); return; }",
+                  "  setTimeout(()=>pm.sendRequest({url:pm.variables.replaceIn(pm.request.url.toString()),method:'GET',header:[auth]},(err,res)=>{",
+                  "    if(err) {pm.test('Consulta de acompanhamento',()=>pm.expect.fail(String(err)));return;}",
+                  "    conferir(res.json(),tentativa+1);",
+                  "  }),100);",
+                  "}",
+                  "conferir(pm.response.json(),0);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Técnico responder pelo chamado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/responder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "responder"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 201. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Resposta sintética\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "const b=pm.response.json();pm.variables.set('evoSentExternal',b.identificadorExterno);pm.variables.set('evoSentRaw',b.identificadorExterno.slice(('evolution:'+pm.variables.get('evolutionInstance')+':').length));pm.variables.set('evoSentId',b.id);pm.test('Resposta persistida com autoria',()=>{pm.expect(b.remetente).to.eql('TECNICO');pm.expect(b.autorId).to.be.a('number');pm.expect(b.conteudo).to.eql('Resposta sintética');pm.expect(pm.response.headers.get('Location')).to.include('/api/mensagens/'+b.id);});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Receber eco do envio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 202. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoSentRaw}}\",\n      \"remoteJid\": \"{{evoPhone}}@s.whatsapp.net\",\n      \"fromMe\": true\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Resposta sintética\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Confirmar envio sem duplicata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Três mensagens e um envio',()=>{const b=pm.response.json();pm.expect(b.length).to.eql(3);pm.expect(b.filter(m=>m.identificadorExterno===pm.variables.get('evoSentExternal')).length).to.eql(1);pm.expect(b.find(m=>m.id===Number(pm.variables.get('evoSentId'))).conteudo).to.eql('Resposta sintética');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Rejeitar resposta vazia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/responder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "responder"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 400. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \" \"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400', () => pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Responder chamado inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{idInexistente}}/responder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{idInexistente}}",
+                "responder"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 404. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Texto fictício\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 404', () => pm.response.to.have.status(404));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Preservar histórico após validações",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/mensagens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "mensagens"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Falhas não criam mensagens',()=>pm.expect(pm.response.json().length).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Encerrar atendimento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/encerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "encerrar"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"causaReal\": \"Causa sintética Evolution\",\n  \"solucaoAplicada\": \"Solução sintética Evolution\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Bloquear resposta após encerrar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoChamadoId}}/responder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoChamadoId}}",
+                "responder"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 409. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Resposta bloqueada\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409', () => pm.response.to.have.status(409));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Nova mensagem após encerrar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 202. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoRun}}-3\",\n      \"remoteJid\": \"{{evoPhone}}@s.whatsapp.net\",\n      \"remoteJidAlt\": \"{{evoLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Conferir continuidade e preservação",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/cliente/{{evoPhone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "cliente",
+                "{{evoPhone}}"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const auth = {key:'Authorization',value:'Bearer '+pm.variables.get('adminToken')};",
+                  "function conferir(body, tentativa) {",
+                  "  if (body.content.length === 2) { pm.test('Novo chamado vinculado ao encerrado',()=>{const novo=body.content.find(x=>x.status==='ABERTO');const antigo=body.content.find(x=>x.id===Number(pm.variables.get('evoChamadoId')));pm.expect(novo.chamadoAnteriorId).to.eql(antigo.id);pm.expect(antigo.causaReal).to.eql('Causa sintética Evolution');pm.expect(antigo.solucaoAplicada).to.eql('Solução sintética Evolution');}); return; }",
+                  "  if(tentativa >= 50) { pm.test('Processamento assíncrono concluído',()=>pm.expect.fail('Estado esperado não apareceu em 5s')); return; }",
+                  "  setTimeout(()=>pm.sendRequest({url:pm.variables.replaceIn(pm.request.url.toString()),method:'GET',header:[auth]},(err,res)=>{",
+                  "    if(err) {pm.test('Consulta de acompanhamento',()=>pm.expect.fail(String(err)));return;}",
+                  "    conferir(res.json(),tentativa+1);",
+                  "  }),100);",
+                  "}",
+                  "conferir(pm.response.json(),0);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Receber contato somente LID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Webhook-Token",
+                "value": "{{evolutionWebhookToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/webhooks/evolution",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "webhooks",
+                "evolution"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 202. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"messages.upsert\",\n  \"instance\": \"{{evolutionInstance}}\",\n  \"data\": {\n    \"key\": {\n      \"id\": \"{{evoRun}}-lid\",\n      \"remoteJid\": \"{{evoOnlyLid}}@lid\",\n      \"fromMe\": false\n    },\n    \"pushName\": \"Cliente Evolution fictício\",\n    \"message\": {\n      \"conversation\": \"Preciso de suporte sintético\"\n    },\n    \"messageTimestamp\": \"1793358000\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Capturar LID sem inventar telefone",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados?size=100&sort=id,desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ],
+              "query": [
+                {
+                  "key": "size",
+                  "value": "100"
+                },
+                {
+                  "key": "sort",
+                  "value": "id,desc"
+                }
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 200. Dados sintéticos; executar na ordem."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const auth = {key:'Authorization',value:'Bearer '+pm.variables.get('adminToken')};",
+                  "function conferir(body, tentativa) {",
+                  "  if (body.content.some(x=>x.contatoWhatsappId===pm.variables.get('evoOnlyLid')+'@lid')) { const b=body.content.find(x=>x.contatoWhatsappId===pm.variables.get('evoOnlyLid')+'@lid');pm.variables.set('evoLidChamadoId',b.id);pm.test('LID preservado separado do telefone',()=>pm.expect(b.telefoneCliente).to.eql(null)); return; }",
+                  "  if(tentativa >= 50) { pm.test('Processamento assíncrono concluído',()=>pm.expect.fail('Estado esperado não apareceu em 5s')); return; }",
+                  "  setTimeout(()=>pm.sendRequest({url:pm.variables.replaceIn(pm.request.url.toString()),method:'GET',header:[auth]},(err,res)=>{",
+                  "    if(err) {pm.test('Consulta de acompanhamento',()=>pm.expect.fail(String(err)));return;}",
+                  "    conferir(res.json(),tentativa+1);",
+                  "  }),100);",
+                  "}",
+                  "conferir(pm.response.json(),0);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Evolution — Responder usando LID",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{evoLidChamadoId}}/responder",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{evoLidChamadoId}}",
+                "responder"
+              ]
+            },
+            "description": "Contrato Etapa 04. Espera HTTP 201. Dados sintéticos; executar na ordem.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Resposta para LID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Mensagem associada ao chamado LID',()=>pm.expect(pm.response.json().chamadoId).to.eql(Number(pm.variables.get('evoLidChamadoId'))));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06B — Conexão WhatsApp real",
+      "description": "Habilitar whatsappConnectionTestsEnabled apenas no ambiente Docker gerenciado. Não envia mensagens ao WhatsApp.",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(String(pm.variables.get('whatsappConnectionTestsEnabled'))!=='true')pm.execution.skipRequest();"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "WhatsApp real — Negar conexão sem login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/conectar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "conectar"
+              ]
+            },
+            "description": "Operação real: não cria chamados nem mensagens. Não salvar respostas com QR Code.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "WhatsApp real — Negar conexão para técnico",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/conectar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "conectar"
+              ]
+            },
+            "description": "Operação real: não cria chamados nem mensagens. Não salvar respostas com QR Code.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN1}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "WhatsApp real — Preparar instância e obter QR",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/conectar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "conectar"
+              ]
+            },
+            "description": "Operação real: não cria chamados nem mensagens. Não salvar respostas com QR Code."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Estado real sem segredos',()=>{const b=pm.response.json();pm.expect(['open','connecting']).to.include(b.estado);pm.expect(b.instancia).to.be.a('string').and.not.empty;pm.expect(b).not.to.have.property('apikey');pm.expect(b).not.to.have.property('hash');if(b.qrCode!==null)pm.expect(b.qrCode).to.match(/^data:image\\/png;base64,/);pm.expect(pm.response.headers.get('Cache-Control')).to.eql('no-store');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "WhatsApp real — Consultar estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/whatsapp/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "whatsapp",
+                "status"
+              ]
+            },
+            "description": "Operação real: não cria chamados nem mensagens. Não salvar respostas com QR Code."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Estado recebido da Evolution',()=>pm.expect(['open','close','connecting']).to.include(pm.response.json().estado));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 — Acesso negado, atribuicao e autoria",
       "item": [
         {
           "name": "Criar chamado de autorizacao",

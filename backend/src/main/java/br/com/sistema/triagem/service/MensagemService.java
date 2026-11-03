@@ -63,6 +63,13 @@ public class MensagemService {
             return MensagemResponseDTO.from(salvo);
         } catch (DataIntegrityViolationException exception) {
             for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+                // Hibernate pode não extrair o nome de restrições em servidores localizados.
+                if (cause instanceof org.postgresql.util.PSQLException pg
+                        && "23505".equals(pg.getSQLState()) && pg.getServerErrorMessage() != null
+                        && "uk_mensagens_identificador_externo".equals(pg.getServerErrorMessage().getConstraint())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT,
+                            "Já existe uma mensagem com este identificador externo.", exception);
+                }
                 if (cause instanceof ConstraintViolationException violation
                         && violation.getConstraintName() != null
                         && violation.getConstraintName().toLowerCase(Locale.ROOT)
@@ -73,6 +80,22 @@ public class MensagemService {
             }
             throw exception;
         }
+    }
+
+    /** Usado somente pelos serviços internos da integração após validar a origem/autorização. */
+    public MensagemResponseDTO registrarWhatsapp(Chamado chamado, String remetente, String conteudo, String tipo,
+                                                LocalDateTime dataEnvio, String externo, Long autorId) {
+        var existente = mensagemRepository.findByIdentificadorExterno(externo);
+        if (existente.isPresent()) return MensagemResponseDTO.from(existente.get());
+        Mensagem mensagem = new Mensagem();
+        mensagem.setChamado(chamado);
+        mensagem.setRemetente(remetente);
+        mensagem.setConteudo(conteudo);
+        mensagem.setTipo(tipo);
+        mensagem.setDataEnvio(dataEnvio.truncatedTo(ChronoUnit.MICROS));
+        mensagem.setIdentificadorExterno(externo);
+        mensagem.setAutorId(autorId);
+        return MensagemResponseDTO.from(mensagemRepository.saveAndFlush(mensagem));
     }
 
     @Transactional(readOnly = true)

@@ -159,5 +159,15 @@ class AcessoControllerIntegrationTest {
         request(post("/api/chamados"), n2Token, Map.of("telefoneCliente", "11900000000", "equipe", "N1"), 403);
         request(patch("/api/chamados/{id}/responsavel", id), adminToken, Map.of("responsavel", "Texto livre"), 400);
     }
+
+    @Test
+    void evolutionDesativadaNaoRecebeNemEnvia() throws Exception {
+        long id = chamado(adminToken);
+        request(get("/api/whatsapp/status"), adminToken, null, 503);
+        request(post("/api/chamados/{id}/responder", id), adminToken, Map.of("texto", "Teste"), 503);
+        request(post("/api/webhooks/evolution"), null,
+                Map.of("event", "messages.upsert", "instance", "teste", "data", Map.of()), 503);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM evolution_webhook_inbox", Integer.class)).isZero();
+    }
 }
 
