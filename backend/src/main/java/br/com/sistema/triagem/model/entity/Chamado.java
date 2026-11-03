@@ -12,8 +12,14 @@ public class Chamado {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "telefone_cliente", nullable = false, length = 30)
+    @Column(name = "telefone_cliente", length = 30)
     private String telefoneCliente;
+
+    @Column(name = "contato_whatsapp_id", length = 100)
+    private String contatoWhatsappId;
+
+    public String getContatoWhatsappId() { return contatoWhatsappId; }
+    public void setContatoWhatsappId(String id) { this.contatoWhatsappId = id; }
 
     @Column(name = "chamado_anterior_id")
     private Long chamadoAnteriorId;

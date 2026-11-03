@@ -1,85 +1,67 @@
 # Testes da API no Postman
 
-Esta coleção reúne os endpoints atuais em **95 requisições**, com exemplos e testes automáticos. Inclui autenticação, técnicos/equipes, saúde, chamados, mensagens, filtros, validações, deduplicação, autoria e encerramento.
+A coleção v2.1 contém **122 requisições**, com autenticação, técnicos/equipes, chamados, mensagens, continuidade de atendimento e integração Evolution real. O ambiente principal é o [Docker da aplicação](../docker.md). Não existe mais provedor Postman simulado no repositório.
 
 ## Importar e executar
 
-1. Inicie o backend seguindo o README da raiz (`cd backend` e `mvn spring-boot:run`).
-2. No Postman, use **Import** para importar os arquivos desta pasta:
-   - `triagem-chamados.postman_collection.json` — coleção no formato v2.1.
-   - `local.postman_environment.json` — ambiente **Triagem — Local**.
-3. Selecione o ambiente **Triagem — Local**. Ajuste `baseUrl` se necessário; o padrão é `http://localhost:8080`, sem barra final e sem `/api` no final.
-4. Preencha `adminLogin` e `adminPassword` somente no ambiente local com a conta administrativa criada conforme [acesso de técnicos](../acesso-tecnicos.md). Não exporte credenciais.
-5. Abra a coleção e use **Run** para executar todas as pastas, na ordem, inicialmente com uma iteração. Não é necessário arquivo de dados.
-6. Confira os testes de cada resposta e o resultado do Runner. Respostas `400`, `404` e `409` são esperadas nos cenários de rejeição e devem passar nos testes correspondentes.
+1. Importe `triagem-chamados.postman_collection.json` e `local.postman_environment.json`.
+2. Defina `baseUrl` (padrão `http://localhost:8080`), `adminLogin` e `adminPassword` somente no seu ambiente privado. No Docker, as credenciais iniciais estão em `.env.docker`.
+3. Para regressão completa, use um backend e banco **de teste**, pois a coleção cria técnicos, chamados e mensagens sintéticos. Execute as pastas em ordem. Não execute esse fluxo para conferir uma instalação com dados reais.
+4. Respostas negativas 400/401/403/404/409 são esperadas e têm verificações próprias. IDs são capturados e os dados são únicos por execução; não use IDs de registros existentes.
 
-O ambiente é opcional: a coleção também define `baseUrl`. Se um ambiente estiver selecionado, o valor dele tem precedência. O fluxo de execução e a passagem de dados entre requisições seguem o [Collection Runner do Postman](https://learning.postman.com/docs/tests-and-scripts/running-collections/intro-to-collection-runs).
+Tokens e senhas dos técnicos sintéticos ficam em variáveis locais (`pm.variables`). Não versione ambientes exportados com credenciais, tokens, QR Codes, IDs de execução ou respostas reais.
 
-**Use um banco de desenvolvimento ou teste:** cada iteração cria quatro chamados, seis mensagens e dois técnicos sintéticos e encerra o chamado principal. Os registros permanecem no banco porque ainda não há endpoint de exclusão. Nenhuma resposta é enviada ao WhatsApp.
+## Pastas
 
-## Ordem dos cenários
-
-| Pasta | Verificações |
+| Pasta | Conteúdo |
 | --- | --- |
-| 00 — Autenticação | Login administrativo, negativas, criação e login de técnicos N1/N2, identidade e equipes. |
-| 01 — Saúde | `GET /health` e corpo `OK`. |
-| 02 — Chamados | Criação completa e mínima, consulta por ID/telefone, paginação, abertos, status, prioridade, responsável, detalhes, equipe e combinação de filtros. |
-| 03 — Validações de chamados | Campos obrigatórios, categorias inválidas, limites, recurso inexistente, rejeição de encerramento pelo status e preservação dos dados após falha. |
-| 04 — Mensagens | Histórico vazio, três remetentes, consulta individual, conteúdo preservado, precisão da data, ordem cronológica e desempate, duplicatas no mesmo/outro chamado, data automática, isolamento e entradas inválidas. |
-| 05 — Encerramento | Causa e solução obrigatórias, encerramento válido, bloqueio de alterações posteriores, preservação do histórico e novo chamado vinculado ao anterior. |
+| 00 — Autenticação | Login administrativo, negativas, criação e login de técnicos N1/N2. |
+| 01 — Saúde | `GET /health`. |
+| 02 — Chamados | Criação, consultas, filtros, status, atribuição, detalhes e equipe. |
+| 03 — Validações | Entradas inválidas, recursos ausentes e preservação após erro. |
+| 04 — Mensagens | Conteúdo, datas, autoria, ordem, isolamento e deduplicação. |
+| 05 — Encerramento | Causa/solução obrigatórias, bloqueio de edição e continuidade. |
+| 06 — Evolution (opcional) | Webhook, aliases/LID, envio e eco sem duplicação, encerramento e novo atendimento. |
+| 06B — Conexão real (opcional) | Acesso administrativo, QR real, estado e ausência de chaves na resposta. |
+| 07 — Acesso | Permissões, autoria, desativação e logout. |
 
-A pasta 06 valida acesso negado por equipe/perfil, atribuição por ID, preservação de dados, autoria, desativação e logout. Tokens e senhas sintéticas ficam em variáveis locais da execução (`pm.variables`); não são gravados no ambiente de exemplo. O administrador permanece ativo, mas sua sessão de teste é encerrada ao final.
+As requisições herdam Bearer administrativo, exceto cenários explicitamente anônimos ou de técnicos. O webhook usa `noauth` mais `X-Webhook-Token`; ele não usa a sessão do painel. A chave da Evolution não existe como variável da coleção e permanece exclusivamente no backend.
 
-Os testes verificam status HTTP e, nos fluxos de sucesso, campos de resposta, IDs, `Location`, contagens e regras de negócio. A coleção é sequencial; o teste de concorrência de mensagens continua na suíte Java.
+## Instalação real, sem gerar dados sintéticos
 
-## Variáveis e execução manual
-
-| Variável | Uso |
-| --- | --- |
-| `baseUrl` | Endereço do backend. |
-| `adminLogin`, `adminPassword` | Credenciais administrativas locais obrigatórias; nunca versionar valores. |
-| `execucaoId`, `telefoneTeste`, `outroTelefoneTeste`, `identificadorExternoTeste` | Geradas antes da criação do chamado completo, com valores novos a cada iteração. |
-| `chamadoId`, `outroChamadoId`, `novoChamadoId` | Capturadas das respostas de criação. |
-| `mensagemClienteId`, `mensagemTecnicoId`, `mensagemSistemaId`, `mensagemSemIdExternoId` | Capturadas ao registrar mensagens. |
-| `idInexistente` | `-1`, usado para os cenários de recurso ausente. |
-
-Não crie cópias das variáveis geradas no ambiente; isso pode sobrepor os valores capturados pela coleção. Os textos acima do limite são gerados por scripts locais às requisições.
-
-Para testar com **Send**, execute primeiro a pasta **00 — Autenticacao e tecnicos**, depois **Criar chamado completo e preparar execução** e **Criar chamado mínimo para isolamento**. Execute depois as requisições que produzem os dados usados pelo cenário desejado. Por exemplo, consultar uma mensagem exige registrá-la antes. Testes de contagem e estado pressupõem a sequência completa, sem inserções extras.
-
-Depois de encerrar um chamado, suas alterações retornam `409`. Para repetir o fluxo, execute a coleção inteira novamente; a primeira criação limpa os IDs anteriores e gera novos dados. Se quiser usar com **Send** os IDs de uma execução do Runner, habilite a opção de manter os valores das variáveis nessa execução.
-
-## Executar pelo terminal
-
-Com Node.js/npm e o backend disponíveis, execute da raiz do projeto:
+Use a tela `/whatsapp.html` ou:
 
 ```powershell
-npx --yes newman@6.2.1 run docs/postman/triagem-chamados.postman_collection.json -e docs/postman/local.postman_environment.json
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-stack.ps1
 ```
 
-Para trocar a porta e testar duas iterações:
+Esse script verifica backend/Evolution reais, prepara a instância, obtém QR quando necessário e consulta o estado e a contagem de chamados. Não cria chamados/mensagens nem envia texto ao WhatsApp.
+
+A pasta **06B** é habilitada por `whatsappConnectionTestsEnabled=true`, com backend no modo gerenciado. Pode ser usada após obter as sessões da pasta 00, mas a pasta 00 cria técnicos de teste: para uma checagem operacional sem dados adicionais, prefira o script acima. `POST /api/whatsapp/conectar` retorna 200 com `instancia`, `estado` (`open`/`connecting`) e `qrCode` (PNG data URL ou nulo), sempre com `Cache-Control: no-store`. O endpoint exige administrador; técnico recebe 403 e anônimo 401. Desativada retorna 503; fora do modo gerenciado retorna 409; falha upstream retorna 502/504. Não salve a resposta QR como exemplo.
+
+## Regressão Evolution isolada
+
+A pasta **06** é habilitada somente por `evolutionTestsEnabled=true`. Configure `evolutionInstance` e `evolutionWebhookToken` para coincidir com o backend de teste. Ela usa mensagens e destinatários fictícios para verificar o contrato e **realiza envios pelo provedor configurado**; não ative contra o WhatsApp da empresa. Por padrão ambas as pastas opcionais ficam desabilitadas.
+
+As consultas aguardam o worker por até cinco segundos. A pasta cria três chamados e seis mensagens adicionais por iteração. Testes de timeout, indisponibilidade, concorrência e eco antecipado são executados pela suíte Java com um servidor HTTP isolado, sem publicar um serviço simulado ou conectar um telefone.
+
+Os controles `__control`, variáveis `evolutionMockEnabled`/`evolutionMockUrl`, pastas de mocks/simulações e antigo script que injetava mensagens foram removidos. Esses artefatos não participam da aplicação real.
+
+## Validar arquivos e executar regressão
 
 ```powershell
-npx --yes newman@6.2.1 run docs/postman/triagem-chamados.postman_collection.json -e docs/postman/local.postman_environment.json --env-var "baseUrl=http://localhost:18081" --iteration-count 2
+node scripts/validate-postman.cjs
+cd backend
+mvn test
+cd ..
+# Somente contra um banco de teste, com credenciais em ambiente privado:
+npx --yes newman@6.2.1 run docs/postman/triagem-chamados.postman_collection.json -e CAMINHO-PRIVADO/ambiente-teste.json --iteration-count 2
 ```
 
-A primeira execução pode baixar o Newman. Ele executa os mesmos scripts da coleção, conforme a [documentação oficial](https://learning.postman.com/docs/collections/using-newman-cli/installing-running-newman). Falhas de requisição ou de asserção produzem código de saída diferente de zero.
+O validador confere os JSONs, corpos de exemplos e sintaxe dos scripts. A coleção conserva a execução sequencial e os exemplos sintéticos conforme `AGENTS.md`; a operação Docker começa sem chamados/mensagens de demonstração. Não se apagam registros reais ou bancos legados para remover dados simulados.
 
-## Atualizar junto de cada implementação
+## Evidência histórica
 
-1. Adicionar ou ajustar a requisição na pasta correspondente, incluindo método, rota, parâmetros e corpo.
-2. Atualizar os testes de sucesso e os erros relevantes ao contrato. Conferir também as consultas que demonstram persistência e preservação de dados.
-3. Se houver dependências entre requisições, capturar os IDs e respeitar a ordem. Manter dados novos por execução.
-4. Executar a coleção inteira contra um backend de teste. Para alterações na preparação dos dados, verificar também duas iterações consecutivas.
-5. Se editar no Postman, exportar em Collection v2.1 para o mesmo arquivo. Antes de versionar, limpar valores de variáveis geradas e remover respostas salvas com dados locais; manter somente exemplos fictícios.
-6. Atualizar este guia, o ambiente quando necessário e a documentação do contrato no mesmo incremento da implementação.
+Antes da implantação Docker, a versão anterior passou em 52 testes Java e duas iterações Newman (250 requisições e 380 verificações) com PostgreSQL isolado e Evolution simulada. Esses números se referem ao contrato anterior. A implantação atual usa a Evolution real; seus resultados e a necessidade de vincular o celular estão descritos no guia Docker.
 
-Essa manutenção está registrada também no `AGENTS.md` da raiz e no fluxo de implementação do projeto.
-
-## Validação desta versão
-
-Em 27/10/2026, a coleção foi executada com Newman 6.2.1 contra o backend Spring Boot em uma instância temporária com H2 em memória: **duas iterações, 130 requisições e 196 testes, sem falhas**. Os JSONs e a sintaxe dos scripts também foram validados, e todas as rotas dos controllers atuais têm uma requisição correspondente. A validação foi pelo Newman, sem execução manual na interface do Postman e sem uso do PostgreSQL.
-
-## Contrato de segurança
-
-Todas as requisições herdam Bearer do administrador, exceto cenários explicitamente anônimos ou executados como técnicos. A atribuição envia `responsavelId` capturado no cadastro. O encaminhamento para N2 remove o responsável anterior; a coleção atribui o técnico N2 antes de testar os filtros. Respostas 401/403 são esperadas nos cenários negativos. Para Newman, use uma cópia privada do ambiente com as credenciais; mantenha o arquivo fora do Git.
+Na implantação real de 30/10/2026, três requisições operacionais da pasta 06B passaram em cinco verificações Newman, sem falhas e sem criação de chamados/mensagens. A negação para técnicos foi validada na suíte Java, que passou em 54 testes. Os JSONs e 129 scripts passaram na validação de sintaxe. O estado real foi `connecting`, com QR disponível; o celular ainda precisa ser vinculado. Não houve execução da coleção completa na base operacional.
