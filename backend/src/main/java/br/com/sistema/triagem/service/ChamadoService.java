@@ -31,10 +31,12 @@ public class ChamadoService {
 
     private final ChamadoRepository chamadoRepository;
     private final AcessoService acesso;
+    private final AprendizadoIaService aprendizado;
 
-    public ChamadoService(ChamadoRepository chamadoRepository, AcessoService acesso) {
+    public ChamadoService(ChamadoRepository chamadoRepository, AcessoService acesso, AprendizadoIaService aprendizado) {
         this.chamadoRepository = chamadoRepository;
         this.acesso = acesso;
+        this.aprendizado = aprendizado;
     }
 
     public Chamado criarChamado(CriarChamadoRequest request) {
@@ -171,6 +173,7 @@ public class ChamadoService {
         chamado.setPrioridadeFinal(category(prioridadeFinal, "prioridadeFinal", PRIORIDADES));
         Chamado salvo = chamadoRepository.saveAndFlush(chamado);
         acesso.registrar(salvo, "PRIORIDADE");
+        aprendizado.registrarManual(salvo);
         return salvo;
     }
 

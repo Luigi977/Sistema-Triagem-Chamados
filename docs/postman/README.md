@@ -1,6 +1,6 @@
 # Testes da API no Postman
 
-A coleção v2.1 contém **122 requisições**, com autenticação, técnicos/equipes, chamados, mensagens, continuidade de atendimento e integração Evolution real. O ambiente principal é o [Docker da aplicação](../docker.md). Não existe mais provedor Postman simulado no repositório.
+A coleção v2.1 contém **155 requisições**, com autenticação, técnicos/equipes, chamados, mensagens, continuidade de atendimento, integração Evolution real, prioridade assistida e feedback para treinamento. O ambiente principal é o [Docker da aplicação](../docker.md). Não existe mais provedor Postman simulado no repositório.
 
 ## Importar e executar
 
@@ -23,11 +23,41 @@ Tokens e senhas dos técnicos sintéticos ficam em variáveis locais (`pm.variab
 | 05 — Encerramento | Causa/solução obrigatórias, bloqueio de edição e continuidade. |
 | 06 — Evolution (opcional) | Webhook, aliases/LID, envio e eco sem duplicação, encerramento e novo atendimento. |
 | 06B — Conexão real (opcional) | Acesso administrativo, QR real, estado e ausência de chaves na resposta. |
+| 06C — IA (opcional) | Matriz Python, regras de contexto, solicitação, aceite/correção, autoria, conflitos e preservação da sugestão original. |
+| 06D — Aprendizado (opcional) | Autenticação interna, recebimento de feedback, erro 422, reenvio idempotente, conflito 409 e preservação após erro. |
 | 07 — Acesso | Permissões, autoria, desativação e logout. |
 
 As requisições herdam Bearer administrativo, exceto cenários explicitamente anônimos ou de técnicos. O webhook usa `noauth` mais `X-Webhook-Token`; ele não usa a sessão do painel. A chave da Evolution não existe como variável da coleção e permanece exclusivamente no backend.
 
 ## Instalação real, sem gerar dados sintéticos
+
+A pasta **06C** exige `iaTestsEnabled=true`, `iaBaseUrl` (padrão
+`http://localhost:8000`) e backend de teste com `IA_ENABLED=true` e `IA_API_URL`
+apontando para o serviço Python. Os exemplos informam impacto/urgência, portanto
+não dependem de modelo treinado. A pasta roda antes da desativação dos técnicos
+e logout da pasta 07; cria um chamado sintético único e captura os IDs.
+Inclui erros 400/401/403/409 e verifica que novas sugestões, conflitos e correções
+preservam a recomendação original e a prioridade final. Timeout, indisponibilidade
+e resposta inválida da IA são exercitados na suíte Java isolada.
+
+As respostas da pasta 06C verificam `feedbackTreinamento` após aceite/correção
+e os novos campos `prioridade_matriz`, `metodo_prioridade` e
+`confianca_prioridade`. A fila é transacional e o envio é assíncrono;
+PENDENTE/ENVIADO não significa que o novo modelo já foi ativado.
+
+A pasta **06D** exige `iaLearningTestsEnabled=true`, `iaBaseUrl` e
+`iaFeedbackToken` preenchido somente no ambiente privado de teste, com o mesmo
+segredo interno do Python. Não usa Bearer administrativo na IA. Cria um
+evento/grupo UUID e data com fuso a cada iteração; captura os dados em
+`pm.variables` e verifica que reenvio ou conflito não alteram o evento original.
+Os rótulos são de prioridade final: não se inferem dimensões a partir deles.
+Sem segredo configurado, a IA responde 503; sem header ou com valor incorreto,
+401. O retreinamento requer um modelo base habilitado, dados mínimos e
+validação; não ocorre dentro da requisição de feedback.
+
+Os detalhes de coleta, backfill de decisões antigas, particionamento,
+quarentena e ativação estão em
+[Aprendizado contínuo](../../ia/APRENDIZADO_CONTINUO.md).
 
 Use a tela `/whatsapp.html` ou:
 
@@ -59,6 +89,25 @@ npx --yes newman@6.2.1 run docs/postman/triagem-chamados.postman_collection.json
 ```
 
 O validador confere os JSONs, corpos de exemplos e sintaxe dos scripts. A coleção conserva a execução sequencial e os exemplos sintéticos conforme `AGENTS.md`; a operação Docker começa sem chamados/mensagens de demonstração. Não se apagam registros reais ou bancos legados para remover dados simulados.
+
+Para executar toda a coleção com Java real/H2 e FastAPI/SQLite temporários,
+sem Docker ou WhatsApp operacional:
+
+```powershell
+cd backend
+mvn test
+mvn dependency:build-classpath "-Dmdep.outputFile=target/learning-classpath.txt" "-DincludeScope=test"
+cd ..
+ia\.venv\Scripts\python scripts/test-learning-flow.py
+```
+
+O script escolhe portas locais livres e cria credenciais efêmeras; remove o
+ambiente e o relatório Newman que contêm tokens ao terminar. Deixa apenas logs,
+SQLite de dados fictícios e resumo em `ia/reports/learning-flow-*/`, ignorado
+pelo Git. Evolution e conexão WhatsApp são pulados. Nesta implementação,
+**128 requisições e 203 verificações passaram sem falhas**, além da confirmação
+por HTTP de aceite/correção/prioridade manual no banco da IA. A etapa de
+retreinamento é coberta separadamente pela suíte Python.
 
 ## Evidência histórica
 

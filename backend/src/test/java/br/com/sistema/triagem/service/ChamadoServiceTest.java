@@ -28,7 +28,7 @@ class ChamadoServiceTest {
         when(repository.saveAndFlush(any(Chamado.class))).thenAnswer(invocation -> invocation.getArgument(0));
         AcessoService acesso = mock(AcessoService.class);
         when(acesso.atual()).thenReturn(new AcessoService.Tecnico(1L, "admin", "Admin", "ADMIN", "N1", true));
-        ChamadoService service = new ChamadoService(repository, acesso);
+        ChamadoService service = new ChamadoService(repository, acesso, mock(AprendizadoIaService.class));
 
         Chamado chamado = service.criarChamado(new CriarChamadoRequest(
                 "11999990000", "Cliente", "ALTA", null, null, null, null, null, null));
@@ -48,7 +48,7 @@ class ChamadoServiceTest {
         when(repository.findForUpdate(1L)).thenReturn(Optional.of(encerrado));
         AcessoService acesso = mock(AcessoService.class);
         when(acesso.atual()).thenReturn(new AcessoService.Tecnico(1L, "admin", "Admin", "ADMIN", "N1", true));
-        ChamadoService service = new ChamadoService(repository, acesso);
+        ChamadoService service = new ChamadoService(repository, acesso, mock(AprendizadoIaService.class));
 
         ResponseStatusException exception = assertThrows(
                 ResponseStatusException.class, () -> service.alterarStatus(1L, "EM_ATENDIMENTO"));

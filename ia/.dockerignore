@@ -1,0 +1,11 @@
+models/*
+!models/.gitkeep
+data/raw
+data/processed
+data/test
+data/learning
+.venv
+__pycache__
+.pytest_cache
+reports
+*.joblib

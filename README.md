@@ -1,8 +1,15 @@
 # Backend
 
+A [base preparada para publicação](dataset/publico/README.md) contém exemplos
+sintéticos e relatos generalizados, sem mensagens originais ou IDs de contatos.
+
 Para iniciar a aplicação com Evolution API real em Docker, execute `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-stack.ps1` e siga o [guia Docker](docs/docker.md).
 
 API do Sistema de Triagem de Chamados, desenvolvida com Java, Spring Boot e Maven.
+
+Aceites, correções e alterações manuais de prioridade dos técnicos alimentam
+uma fila persistente de [aprendizado da IA](ia/APRENDIZADO_CONTINUO.md), com
+retreinamento assíncrono em lotes e validação antes de ativar cada candidato.
 
 ## Dependências
 
@@ -227,6 +234,11 @@ mvn test
 Os testes usam bancos H2 em memória, portanto não precisam de uma instância do PostgreSQL. A integração de mensagens cobre registro e consulta por HTTP, histórico cronológico, isolamento entre chamados, entradas inválidas, recursos ausentes e duplicatas sequenciais/concorrentes.
 
 ## Mapa de funcionalidades
+
+A [IA de prioridade](ia/README.md) implementa FastAPI, matriz de impacto × urgência,
+treinamento/avaliação de dois classificadores, contexto auditável e revisão humana
+no Spring Boot/React. O exemplo de dataset é sintético; homologação com dados reais
+continua necessária. Consulte o guia para executar, treinar e integrar.
 
 Acompanhe as etapas, critérios de conclusão e branches no [fluxo de implementação e commits](docs/fluxo-de-implementacao.md).
 
