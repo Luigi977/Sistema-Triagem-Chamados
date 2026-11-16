@@ -15,6 +15,7 @@ if (-not (Test-Path -LiteralPath $configPath)) {
         "DOCKER_EVOLUTION_DB_PASSWORD=$(New-LocalSecret)",
         "DOCKER_EVOLUTION_API_KEY=$(New-LocalSecret)",
         "DOCKER_EVOLUTION_WEBHOOK_TOKEN=$(New-LocalSecret)",
+        "DOCKER_IA_FEEDBACK_TOKEN=$(New-LocalSecret)",
         'DOCKER_EVOLUTION_INSTANCE=suporte',
         'DOCKER_ADMIN_LOGIN=admin',
         "DOCKER_ADMIN_PASSWORD=$(New-LocalSecret)",
@@ -23,6 +24,13 @@ if (-not (Test-Path -LiteralPath $configPath)) {
     )
     [IO.File]::WriteAllLines($configPath, $settings, (New-Object Text.UTF8Encoding $false))
     Write-Host 'Configuracao privada criada em .env.docker. Credenciais nao sao exibidas nos logs.'
+}
+# Atualiza instalações existentes sem expor ou substituir os demais segredos.
+if (-not (Select-String -LiteralPath $configPath -Pattern '^DOCKER_IA_FEEDBACK_TOKEN=.+$' -Quiet)) {
+    $content = [IO.File]::ReadAllText($configPath)
+    $content = [regex]::Replace($content, '(?m)^DOCKER_IA_FEEDBACK_TOKEN=.*\r?\n?', '')
+    $content = $content.TrimEnd() + "`nDOCKER_IA_FEEDBACK_TOKEN=$(New-LocalSecret)`n"
+    [IO.File]::WriteAllText($configPath, $content, (New-Object Text.UTF8Encoding $false))
 }
 if ($PrepareOnly) { return }
 Push-Location $projectRoot

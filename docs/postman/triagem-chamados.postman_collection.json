@@ -117,6 +117,27 @@
       "value": "false",
       "type": "string",
       "description": "Habilita testes de conexão real sem envio; exige modo gerenciado."
+    },
+    {
+      "key": "iaTestsEnabled",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "iaBaseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "iaLearningTestsEnabled",
+      "value": "false",
+      "type": "string"
+    },
+    {
+      "key": "iaFeedbackToken",
+      "value": "",
+      "type": "string",
+      "description": "Segredo interno: preencher apenas no ambiente privado de teste."
     }
   ],
   "item": [
@@ -4966,6 +4987,1558 @@
                 "exec": [
                   "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
                   "pm.test('Estado recebido da Evolution',()=>pm.expect(['open','close','connecting']).to.include(pm.response.json().estado));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06C — IA: prioridade e revisao humana (opcional)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.variables.get('iaTestsEnabled') !== 'true') pm.execution.skipRequest();"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "IA — Matriz critica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/predict/priority",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "predict",
+                "priority"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Servidor central indisponivel para todos\",\n  \"impacto_informado\": \"ALTO\",\n  \"urgencia_informada\": \"ALTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "const d=pm.response.json(); pm.test('Matriz e origem',()=>{pm.expect(d.prioridade_recomendada).eql('CRITICA');pm.expect(d.origem).eql('INFORMADO');pm.expect(d.confianca_impacto).eql(null);pm.expect(d.revisao_humana_obrigatoria).eql(true);});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Metodo da prioridade explicito',()=>{const d=pm.response.json();pm.expect(d.metodo_prioridade).eql('MATRIZ');pm.expect(d.prioridade_matriz).eql('CRITICA');pm.expect(d.confianca_prioridade).eql(null);});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Cargo sozinho nao eleva prioridade",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/predict/priority",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "predict",
+                "priority"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Instalar programa na proxima semana\",\n  \"impacto_informado\": \"BAIXO\",\n  \"urgencia_informada\": \"BAIXO\",\n  \"contexto\": {\n    \"cargo\": \"Diretor\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Cargo sem ajuste',()=>{pm.expect(pm.response.json().prioridade_recomendada).eql('BAIXA');pm.expect(pm.response.json().regras_aplicadas).eql([]);});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Contexto confirmado aplica piso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/predict/priority",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "predict",
+                "priority"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Servico critico com alternativa\",\n  \"impacto_informado\": \"BAIXO\",\n  \"urgencia_informada\": \"BAIXO\",\n  \"contexto\": {\n    \"criticidade_servico\": \"ALTA\",\n    \"confirmado\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Preserva base e explica ajuste',()=>{const d=pm.response.json();pm.expect(d.prioridade_base).eql('BAIXA');pm.expect(d.prioridade_recomendada).eql('ALTA');pm.expect(d.regras_aplicadas[0].id).eql('SERVICO_CRITICO_CONFIRMADO');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Rejeitar categoria desconhecida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/predict/priority",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "predict",
+                "priority"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"texto\": \"Teste\",\n  \"impacto_informado\": \"URGENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422',()=>pm.response.to.have.status(422));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Criar chamado sintetico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefoneCliente\": \"{{iaTelefone}}\",\n  \"resumo\": \"Incidente sintetico de prioridade\",\n  \"descricao\": \"Toda a empresa ficou sem acesso ao servidor\",\n  \"equipe\": \"N1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('iaTelefone', 'ia-' + pm.variables.replaceIn('{{$guid}}').replace(/-/g,'').slice(0,24));",
+                  "['iaChamadoId','iaTriagemId','iaOriginal','iaTriagemNovaId','iaObsoletaId'].forEach(k=>pm.variables.unset(k));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.variables.set('iaChamadoId',pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Negar solicitacao anonima",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Negar tecnico de outra equipe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenN2}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403',()=>pm.response.to.have.status(403));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Rejeitar impacto invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"impactoInformado\": \"URGENTE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Solicitar sugestao critica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"impactoInformado\": \"ALTO\",\n  \"urgenciaInformada\": \"ALTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "const d=pm.response.json();pm.variables.set('iaTriagemId',d.id);pm.variables.set('iaOriginal',JSON.stringify(d.resultado));pm.test('Aguarda revisao humana',()=>{pm.expect(d.estado).eql('AGUARDANDO_REVISAO');pm.expect(d.resultado.prioridade_recomendada).eql('CRITICA');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Sugestao nao muda prioridade final",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Final ainda ausente',()=>{pm.expect(pm.response.json().prioridadeFinal).eql(null);pm.expect(pm.response.json().prioridadeSugerida).eql('CRITICA');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Correcao exige justificativa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade/{{iaTriagemId}}/decisao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade",
+                "{{iaTriagemId}}",
+                "decisao"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acao\": \"CORRIGIR\",\n  \"prioridadeFinal\": \"MEDIA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 400',()=>pm.response.to.have.status(400));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Corrigir mantendo original",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade/{{iaTriagemId}}/decisao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade",
+                "{{iaTriagemId}}",
+                "decisao"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acao\": \"CORRIGIR\",\n  \"prioridadeFinal\": \"MEDIA\",\n  \"justificativa\": \"Alternativa operacional confirmada pelo tecnico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Original preservado e autoria',()=>{const d=pm.response.json();pm.expect(d.resultado).deep.eql(JSON.parse(pm.variables.get('iaOriginal')));pm.expect(d.estado).eql('CORRIGIDA');pm.expect(d.prioridadeFinal).eql('MEDIA');pm.expect(d.decisorId).eql(Number(pm.variables.get('adminId')));pm.expect(d.decididaEm).to.be.a('string');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const fb=pm.response.json().feedbackTreinamento; pm.test('Decisao entrou na fila de treinamento',()=>{pm.expect(fb).to.be.an('object');pm.expect(['PENDENTE','ENVIADO']).to.include(fb.estado);pm.expect(fb.eventoId).to.be.a('string');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Impedir decisao duplicada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade/{{iaTriagemId}}/decisao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade",
+                "{{iaTriagemId}}",
+                "decisao"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acao\": \"ACEITAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409',()=>pm.response.to.have.status(409));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Confirmar prioridade corrigida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Final MEDIA preservada',()=>pm.expect(pm.response.json().prioridadeFinal).eql('MEDIA'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Nova sugestao preserva decisao anterior",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"impactoInformado\": \"BAIXO\",\n  \"urgenciaInformada\": \"BAIXO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.variables.set('iaTriagemNovaId',pm.response.json().id);pm.test('Nova recomendacao',()=>pm.expect(pm.response.json().resultado.prioridade_recomendada).eql('BAIXA'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Confirmar final apos nova sugestao",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Nova analise nao aplica prioridade',()=>pm.expect(pm.response.json().prioridadeFinal).eql('MEDIA'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Aceitar nova recomendacao",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade/{{iaTriagemNovaId}}/decisao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade",
+                "{{iaTriagemNovaId}}",
+                "decisao"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acao\": \"ACEITAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Aceite',()=>{pm.expect(pm.response.json().estado).eql('ACEITA');pm.expect(pm.response.json().prioridadeFinal).eql('BAIXA');});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const fb=pm.response.json().feedbackTreinamento; pm.test('Decisao entrou na fila de treinamento',()=>{pm.expect(fb).to.be.an('object');pm.expect(['PENDENTE','ENVIADO']).to.include(fb.estado);pm.expect(fb.eventoId).to.be.a('string');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Consultar historico preservado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Duas sugestoes e original',()=>{const d=pm.response.json();pm.expect(d).to.have.lengthOf(2);pm.expect(d[1].resultado).deep.eql(JSON.parse(pm.variables.get('iaOriginal')));pm.expect(d[1].prioridadeFinal).eql('MEDIA');});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Preparar recomendacao para conflito",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"impactoInformado\": \"ALTO\",\n  \"urgenciaInformada\": \"ALTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.variables.set('iaObsoletaId',pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Alterar manualmente prioridade",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"prioridadeFinal\": \"ALTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Rejeitar sugestao desatualizada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade/{{iaObsoletaId}}/decisao",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade",
+                "{{iaObsoletaId}}",
+                "decisao"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acao\": \"ACEITAR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409',()=>pm.response.to.have.status(409));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Preservar final apos conflito",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Final manual preservada',()=>pm.expect(pm.response.json().prioridadeFinal).eql('ALTA'));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Encerrar chamado sintetico",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/encerrar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "encerrar"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"causaReal\": \"Cenario sintetico de regressao\",\n  \"solucaoAplicada\": \"Restabelecimento ficticio\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Bloquear analise em encerrado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"impactoInformado\": \"ALTO\",\n  \"urgenciaInformada\": \"ALTO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409',()=>pm.response.to.have.status(409));",
+                  ""
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "IA — Historico continua disponivel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/chamados/{{iaChamadoId}}/triagens-prioridade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chamados",
+                "{{iaChamadoId}}",
+                "triagens-prioridade"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Historico de tres analises preservado',()=>{pm.expect(pm.response.json()).to.have.lengthOf(3);pm.expect(pm.response.json()[2].resultado).deep.eql(JSON.parse(pm.variables.get('iaOriginal')));});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06D - IA: aprendizado com feedback (opcional)",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if(String(pm.variables.get('iaLearningTestsEnabled'))!=='true'){pm.execution.skipRequest();}else if(!pm.variables.get('iaFeedbackToken')){throw new Error('Configure iaFeedbackToken no ambiente privado de teste');}"
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "name": "Learning - Estado inicial",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/status",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "status"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.variables.set('iaFeedbackEvent',pm.variables.replaceIn('{{$guid}}'));pm.variables.set('iaFeedbackGroup',pm.variables.replaceIn('{{$guid}}'));",
+                  "pm.variables.set('iaFeedbackDecidedAt',new Date().toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.variables.set('iaFeedbackBaseline',pm.response.json().feedbacks_recebidos);"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Negar sem credencial interna",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/feedback",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "feedback"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{iaFeedbackEvent}}\",\n  \"grupo\": \"{{iaFeedbackGroup}}\",\n  \"texto\": \"Chamado ficticio unico {{iaFeedbackEvent}}: impressora de setor falhou, alternativa confirmada pelo tecnico.\",\n  \"acao\": \"CORRIGIR\",\n  \"prioridade_final\": \"MEDIA\",\n  \"servico_critico_confirmado\": false,\n  \"decidida_em\": \"{{iaFeedbackDecidedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401',()=>pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Rejeitar rotulo invalido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/feedback",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "feedback"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{iaFeedbackEvent}}\",\n  \"grupo\": \"{{iaFeedbackGroup}}\",\n  \"texto\": \"Chamado ficticio unico {{iaFeedbackEvent}}: impressora de setor falhou, alternativa confirmada pelo tecnico.\",\n  \"acao\": \"CORRIGIR\",\n  \"prioridade_final\": \"URGENTE\",\n  \"servico_critico_confirmado\": false,\n  \"decidida_em\": \"{{iaFeedbackDecidedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422',()=>pm.response.to.have.status(422));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Receber correcao tecnica",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/feedback",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "feedback"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{iaFeedbackEvent}}\",\n  \"grupo\": \"{{iaFeedbackGroup}}\",\n  \"texto\": \"Chamado ficticio unico {{iaFeedbackEvent}}: impressora de setor falhou, alternativa confirmada pelo tecnico.\",\n  \"acao\": \"CORRIGIR\",\n  \"prioridade_final\": \"MEDIA\",\n  \"servico_critico_confirmado\": false,\n  \"decidida_em\": \"{{iaFeedbackDecidedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201',()=>pm.response.to.have.status(201));",
+                  "pm.test('Recibo corresponde ao evento',()=>{const d=pm.response.json();pm.expect(d.evento_id).eql(pm.variables.get('iaFeedbackEvent'));pm.expect(d.estado).eql('RECEBIDO');});",
+                  "pm.test('Novo evento',()=>pm.expect(pm.response.json().duplicado).eql(false));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Reenvio idempotente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/feedback",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "feedback"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{iaFeedbackEvent}}\",\n  \"grupo\": \"{{iaFeedbackGroup}}\",\n  \"texto\": \"Chamado ficticio unico {{iaFeedbackEvent}}: impressora de setor falhou, alternativa confirmada pelo tecnico.\",\n  \"acao\": \"CORRIGIR\",\n  \"prioridade_final\": \"MEDIA\",\n  \"servico_critico_confirmado\": false,\n  \"decidida_em\": \"{{iaFeedbackDecidedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Recibo corresponde ao evento',()=>{const d=pm.response.json();pm.expect(d.evento_id).eql(pm.variables.get('iaFeedbackEvent'));pm.expect(d.estado).eql('RECEBIDO');});",
+                  "pm.test('Nao duplica evento',()=>pm.expect(pm.response.json().duplicado).eql(true));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Recusar alteracao do evento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/feedback",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "feedback"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{iaFeedbackEvent}}\",\n  \"grupo\": \"{{iaFeedbackGroup}}\",\n  \"texto\": \"Chamado ficticio unico {{iaFeedbackEvent}}: impressora de setor falhou, alternativa confirmada pelo tecnico.\",\n  \"acao\": \"CORRIGIR\",\n  \"prioridade_final\": \"ALTA\",\n  \"servico_critico_confirmado\": false,\n  \"decidida_em\": \"{{iaFeedbackDecidedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 409',()=>pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Preservar evento apos erro",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/feedback",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "feedback"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"evento_id\": \"{{iaFeedbackEvent}}\",\n  \"grupo\": \"{{iaFeedbackGroup}}\",\n  \"texto\": \"Chamado ficticio unico {{iaFeedbackEvent}}: impressora de setor falhou, alternativa confirmada pelo tecnico.\",\n  \"acao\": \"CORRIGIR\",\n  \"prioridade_final\": \"MEDIA\",\n  \"servico_critico_confirmado\": false,\n  \"decidida_em\": \"{{iaFeedbackDecidedAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Recibo corresponde ao evento',()=>{const d=pm.response.json();pm.expect(d.evento_id).eql(pm.variables.get('iaFeedbackEvent'));pm.expect(d.estado).eql('RECEBIDO');});",
+                  "pm.test('Original permanece',()=>pm.expect(pm.response.json().duplicado).eql(true));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Learning - Estado preservado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Feedback-Token",
+                "value": "{{iaFeedbackToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{iaBaseUrl}}/learning/status",
+              "host": [
+                "{{iaBaseUrl}}"
+              ],
+              "path": [
+                "learning",
+                "status"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200',()=>pm.response.to.have.status(200));",
+                  "pm.test('Contagem e politica de treino',()=>{const d=pm.response.json();pm.expect(d.feedbacks_recebidos).to.be.at.least(Number(pm.variables.get('iaFeedbackBaseline'))+1);pm.expect(d.minimo_feedbacks).to.be.a('number');pm.expect(d.particoes).to.be.an('object');pm.expect(d).not.to.have.property('texto');});"
                 ]
               }
             }

@@ -1,0 +1,14 @@
+[
+  {"id":"internet-individual-sem-pressa","texto":"Minha internet está lenta só no meu notebook. Os colegas conseguem trabalhar. Pode verificar na próxima semana, não tenho pressa.","impacto":"BAIXO","urgencia":"BAIXO"},
+  {"id":"internet-geral-parada","texto":"A internet caiu em todas as unidades da empresa. Todos os setores estão parados agora e não temos alternativa. Precisamos de solução imediata.","impacto":"ALTO","urgencia":"ALTO"},
+  {"id":"scanner-individual-prazo","texto":"Meu app do scanner não abre, apenas eu fui afetado. Preciso digitalizar até amanhã, mas posso usar outro equipamento por enquanto.","impacto":"BAIXO","urgencia":"MEDIO"},
+  {"id":"email-setor-parado","texto":"O e-mail parou para o departamento inteiro. Outros setores estão normais. Não conseguimos continuar o atendimento agora e não há alternativa.","impacto":"MEDIO","urgencia":"ALTO"},
+  {"id":"cameras-geral-planejado","texto":"Precisamos atualizar as câmeras de todas as unidades da organização. Elas funcionam normalmente. É uma melhoria sem pressa, pode esperar vários dias.","impacto":"ALTO","urgencia":"BAIXO"},
+  {"id":"pdf-individual-sem-pressa","texto":"Só eu preciso aprender a converter JPG para PDF no meu computador. Pode ficar para a próxima semana, sem prazo imediato.","impacto":"BAIXO","urgencia":"BAIXO"},
+  {"id":"senha-individual-parada","texto":"Minha senha não funciona e somente minha estação está afetada. Preciso trabalhar agora, estou parado e não existe alternativa para continuar.","impacto":"BAIXO","urgencia":"ALTO"},
+  {"id":"impressora-setor-prazo","texto":"A impressora do setor está falhando para toda a equipe. Os demais departamentos não foram afetados. Precisamos resolver até amanhã e temos uma alternativa temporária.","impacto":"MEDIO","urgencia":"MEDIO"},
+  {"id":"formatacao-setor-planejada","texto":"Precisamos formatar os computadores de um único departamento. Toda a equipe desse setor será afetada. O serviço pode aguardar a próxima semana, sem pressa.","impacto":"MEDIO","urgencia":"BAIXO"},
+  {"id":"sistema-geral-prazo","texto":"O sistema falhou em todos os setores da empresa. Precisamos resolver até amanhã. Por enquanto conseguimos continuar por um procedimento alternativo.","impacto":"ALTO","urgencia":"MEDIO"},
+  {"id":"internet-abreviada","texto":"a net caiu na empresa inteira, todos os setores parados agr. n tem alternativa, precisa resolver imediatamente","impacto":"ALTO","urgencia":"ALTO"},
+  {"id":"camera-abreviada","texto":"so minha camera ta com problema, o restante funciona. pode esperar ate semana que vem, sem pressa","impacto":"BAIXO","urgencia":"BAIXO"}
+]

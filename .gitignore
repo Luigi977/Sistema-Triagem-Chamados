@@ -1,34 +1,131 @@
-# Environment files and secrets
-**/.env
-**/.env.*
-!**/.env.example
+﻿# Configuração local, credenciais e certificados privados
+.env
+.env.*
+!.env.example
+.envrc
+.secrets/
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.local
+.npmrc
+.pypirc
 
-# Spring Boot / Java
-backend/target/
+# Java / Maven: compilação e arquivos de execução
+target/
 *.class
+hs_err_pid*
+replay_pid*
 
-# React / Node.js
-frontend/node_modules/
-frontend/dist/
-frontend/.vite/
+# Node / Vite: dependências, compilação e cache
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+.eslintcache
+.npm/
 
-# Python
-**/__pycache__/
+# Python: ambientes, cache, cobertura e empacotamento
+.venv/
+venv/
+__pycache__/
 *.py[cod]
-**/.venv/
-**/venv/
-**/.pytest_cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+*.egg-info/
+.ipynb_checkpoints/
+ia/build/
+ia/reports/
 
-# Local datasets and generated model artifacts
-dataset/original/*
-!dataset/original/.gitkeep
-ia/data/raw/*
-!ia/data/raw/.gitkeep
-ia/models/*
-!ia/models/.gitkeep
+# Bases privadas e intermediárias: somente a versão pública revisada é liberada
+/dataset/*
+!/dataset/README.md
+!/dataset/original/
+/dataset/original/*
+!/dataset/original/.gitkeep
+!/dataset/publico/
+/dataset/publico/*
+!/dataset/publico/README.md
+!/dataset/publico/relatos-generalizados.csv
+!/dataset/publico/treinamento-publico.csv
+!/dataset/publico/tabela-publica.xlsx
+!/dataset/publico/resumo.json
+/ia/data/*
+!/ia/data/raw/
+/ia/data/raw/*
+!/ia/data/raw/.gitkeep
 
-# Local datasets excluded entirely from version control
-dataset/anonymized/
-dataset/labeled/
-ia/data/processed/
-ia/data/test/
+# Modelos treinados podem conter vocabulário e dados da base privada
+/ia/models/*
+!/ia/models/.gitkeep
+*.joblib
+*.pkl
+*.pickle
+*.onnx
+
+# Exportações de dados fora das pastas privadas também ficam bloqueadas
+*.csv
+*.tsv
+*.jsonl
+*.ndjson
+*.xls
+*.xlsx
+*.xlsm
+*.parquet
+*.dump
+*.backup
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+/database/dumps/
+/database/backups/
+!/ia/examples/*.csv
+!/dataset/publico/relatos-generalizados.csv
+!/dataset/publico/treinamento-publico.csv
+!/dataset/publico/tabela-publica.xlsx
+
+# Postman: manter apenas o ambiente de exemplo com segredos vazios
+*.postman_environment.json
+!docs/postman/local.postman_environment.json
+newman/
+
+# Logs, arquivos temporários e cópias de segurança
+logs/
+*.log
+*-debug.log*
+*-error.log*
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+~$*
+
+# Configurações pessoais de editores e arquivos do sistema operacional
+.idea/
+.vscode/
+*.iml
+*.suo
+*.user
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,82 @@
+id,grupo,texto,impacto,urgencia,particao,origem
+1,cenario-0-0-0,Somente meu computador foi afetado. Pode ser resolvido na proxima semana. Solicito suporte tecnico.,BAIXO,BAIXO,treino,SINTETICO
+2,cenario-0-0-0,Somente meu computador foi afetado. Pode ser resolvido na proxima semana. Preciso de ajuda com esse incidente.,BAIXO,BAIXO,treino,SINTETICO
+3,cenario-0-0-0,Somente meu computador foi afetado. Pode ser resolvido na proxima semana. Favor analisar o atendimento.,BAIXO,BAIXO,treino,SINTETICO
+4,cenario-0-0-1,O problema afeta um unico colaborador. Nao ha prazo imediato e existe alternativa. Solicito suporte tecnico.,BAIXO,BAIXO,validacao,SINTETICO
+5,cenario-0-0-1,O problema afeta um unico colaborador. Nao ha prazo imediato e existe alternativa. Preciso de ajuda com esse incidente.,BAIXO,BAIXO,validacao,SINTETICO
+6,cenario-0-0-1,O problema afeta um unico colaborador. Nao ha prazo imediato e existe alternativa. Favor analisar o atendimento.,BAIXO,BAIXO,validacao,SINTETICO
+7,cenario-0-0-2,Apenas minha estacao apresenta falha. A solicitacao pode aguardar alguns dias. Solicito suporte tecnico.,BAIXO,BAIXO,teste,SINTETICO
+8,cenario-0-0-2,Apenas minha estacao apresenta falha. A solicitacao pode aguardar alguns dias. Preciso de ajuda com esse incidente.,BAIXO,BAIXO,teste,SINTETICO
+9,cenario-0-0-2,Apenas minha estacao apresenta falha. A solicitacao pode aguardar alguns dias. Favor analisar o atendimento.,BAIXO,BAIXO,teste,SINTETICO
+10,cenario-0-1-0,Somente meu computador foi afetado. Precisamos resolver ate amanha. Solicito suporte tecnico.,BAIXO,MEDIO,treino,SINTETICO
+11,cenario-0-1-0,Somente meu computador foi afetado. Precisamos resolver ate amanha. Preciso de ajuda com esse incidente.,BAIXO,MEDIO,treino,SINTETICO
+12,cenario-0-1-0,Somente meu computador foi afetado. Precisamos resolver ate amanha. Favor analisar o atendimento.,BAIXO,MEDIO,treino,SINTETICO
+13,cenario-0-1-1,O problema afeta um unico colaborador. Ha prazo para o proximo dia util. Solicito suporte tecnico.,BAIXO,MEDIO,validacao,SINTETICO
+14,cenario-0-1-1,O problema afeta um unico colaborador. Ha prazo para o proximo dia util. Preciso de ajuda com esse incidente.,BAIXO,MEDIO,validacao,SINTETICO
+15,cenario-0-1-1,O problema afeta um unico colaborador. Ha prazo para o proximo dia util. Favor analisar o atendimento.,BAIXO,MEDIO,validacao,SINTETICO
+16,cenario-0-1-2,Apenas minha estacao apresenta falha. A atividade pode aguardar ate o fim do dia. Solicito suporte tecnico.,BAIXO,MEDIO,teste,SINTETICO
+17,cenario-0-1-2,Apenas minha estacao apresenta falha. A atividade pode aguardar ate o fim do dia. Preciso de ajuda com esse incidente.,BAIXO,MEDIO,teste,SINTETICO
+18,cenario-0-1-2,Apenas minha estacao apresenta falha. A atividade pode aguardar ate o fim do dia. Favor analisar o atendimento.,BAIXO,MEDIO,teste,SINTETICO
+19,cenario-0-2-0,Somente meu computador foi afetado. Precisamos retomar agora sem alternativa. Solicito suporte tecnico.,BAIXO,ALTO,treino,SINTETICO
+20,cenario-0-2-0,Somente meu computador foi afetado. Precisamos retomar agora sem alternativa. Preciso de ajuda com esse incidente.,BAIXO,ALTO,treino,SINTETICO
+21,cenario-0-2-0,Somente meu computador foi afetado. Precisamos retomar agora sem alternativa. Favor analisar o atendimento.,BAIXO,ALTO,treino,SINTETICO
+22,cenario-0-2-1,O problema afeta um unico colaborador. O prazo vence agora e a operacao esta parada. Solicito suporte tecnico.,BAIXO,ALTO,validacao,SINTETICO
+23,cenario-0-2-1,O problema afeta um unico colaborador. O prazo vence agora e a operacao esta parada. Preciso de ajuda com esse incidente.,BAIXO,ALTO,validacao,SINTETICO
+24,cenario-0-2-1,O problema afeta um unico colaborador. O prazo vence agora e a operacao esta parada. Favor analisar o atendimento.,BAIXO,ALTO,validacao,SINTETICO
+25,cenario-0-2-2,Apenas minha estacao apresenta falha. Nao podemos esperar e precisamos atendimento imediato. Solicito suporte tecnico.,BAIXO,ALTO,teste,SINTETICO
+26,cenario-0-2-2,Apenas minha estacao apresenta falha. Nao podemos esperar e precisamos atendimento imediato. Preciso de ajuda com esse incidente.,BAIXO,ALTO,teste,SINTETICO
+27,cenario-0-2-2,Apenas minha estacao apresenta falha. Nao podemos esperar e precisamos atendimento imediato. Favor analisar o atendimento.,BAIXO,ALTO,teste,SINTETICO
+28,cenario-1-0-0,O departamento inteiro esta afetado. Pode ser resolvido na proxima semana. Solicito suporte tecnico.,MEDIO,BAIXO,treino,SINTETICO
+29,cenario-1-0-0,O departamento inteiro esta afetado. Pode ser resolvido na proxima semana. Preciso de ajuda com esse incidente.,MEDIO,BAIXO,treino,SINTETICO
+30,cenario-1-0-0,O departamento inteiro esta afetado. Pode ser resolvido na proxima semana. Favor analisar o atendimento.,MEDIO,BAIXO,treino,SINTETICO
+31,cenario-1-0-1,Minha equipe esta sem acesso. Nao ha prazo imediato e existe alternativa. Solicito suporte tecnico.,MEDIO,BAIXO,validacao,SINTETICO
+32,cenario-1-0-1,Minha equipe esta sem acesso. Nao ha prazo imediato e existe alternativa. Preciso de ajuda com esse incidente.,MEDIO,BAIXO,validacao,SINTETICO
+33,cenario-1-0-1,Minha equipe esta sem acesso. Nao ha prazo imediato e existe alternativa. Favor analisar o atendimento.,MEDIO,BAIXO,validacao,SINTETICO
+34,cenario-1-0-2,Varias pessoas do setor estao paradas. A solicitacao pode aguardar alguns dias. Solicito suporte tecnico.,MEDIO,BAIXO,teste,SINTETICO
+35,cenario-1-0-2,Varias pessoas do setor estao paradas. A solicitacao pode aguardar alguns dias. Preciso de ajuda com esse incidente.,MEDIO,BAIXO,teste,SINTETICO
+36,cenario-1-0-2,Varias pessoas do setor estao paradas. A solicitacao pode aguardar alguns dias. Favor analisar o atendimento.,MEDIO,BAIXO,teste,SINTETICO
+37,cenario-1-1-0,O departamento inteiro esta afetado. Precisamos resolver ate amanha. Solicito suporte tecnico.,MEDIO,MEDIO,treino,SINTETICO
+38,cenario-1-1-0,O departamento inteiro esta afetado. Precisamos resolver ate amanha. Preciso de ajuda com esse incidente.,MEDIO,MEDIO,treino,SINTETICO
+39,cenario-1-1-0,O departamento inteiro esta afetado. Precisamos resolver ate amanha. Favor analisar o atendimento.,MEDIO,MEDIO,treino,SINTETICO
+40,cenario-1-1-1,Minha equipe esta sem acesso. Ha prazo para o proximo dia util. Solicito suporte tecnico.,MEDIO,MEDIO,validacao,SINTETICO
+41,cenario-1-1-1,Minha equipe esta sem acesso. Ha prazo para o proximo dia util. Preciso de ajuda com esse incidente.,MEDIO,MEDIO,validacao,SINTETICO
+42,cenario-1-1-1,Minha equipe esta sem acesso. Ha prazo para o proximo dia util. Favor analisar o atendimento.,MEDIO,MEDIO,validacao,SINTETICO
+43,cenario-1-1-2,Varias pessoas do setor estao paradas. A atividade pode aguardar ate o fim do dia. Solicito suporte tecnico.,MEDIO,MEDIO,teste,SINTETICO
+44,cenario-1-1-2,Varias pessoas do setor estao paradas. A atividade pode aguardar ate o fim do dia. Preciso de ajuda com esse incidente.,MEDIO,MEDIO,teste,SINTETICO
+45,cenario-1-1-2,Varias pessoas do setor estao paradas. A atividade pode aguardar ate o fim do dia. Favor analisar o atendimento.,MEDIO,MEDIO,teste,SINTETICO
+46,cenario-1-2-0,O departamento inteiro esta afetado. Precisamos retomar agora sem alternativa. Solicito suporte tecnico.,MEDIO,ALTO,treino,SINTETICO
+47,cenario-1-2-0,O departamento inteiro esta afetado. Precisamos retomar agora sem alternativa. Preciso de ajuda com esse incidente.,MEDIO,ALTO,treino,SINTETICO
+48,cenario-1-2-0,O departamento inteiro esta afetado. Precisamos retomar agora sem alternativa. Favor analisar o atendimento.,MEDIO,ALTO,treino,SINTETICO
+49,cenario-1-2-1,Minha equipe esta sem acesso. O prazo vence agora e a operacao esta parada. Solicito suporte tecnico.,MEDIO,ALTO,validacao,SINTETICO
+50,cenario-1-2-1,Minha equipe esta sem acesso. O prazo vence agora e a operacao esta parada. Preciso de ajuda com esse incidente.,MEDIO,ALTO,validacao,SINTETICO
+51,cenario-1-2-1,Minha equipe esta sem acesso. O prazo vence agora e a operacao esta parada. Favor analisar o atendimento.,MEDIO,ALTO,validacao,SINTETICO
+52,cenario-1-2-2,Varias pessoas do setor estao paradas. Nao podemos esperar e precisamos atendimento imediato. Solicito suporte tecnico.,MEDIO,ALTO,teste,SINTETICO
+53,cenario-1-2-2,Varias pessoas do setor estao paradas. Nao podemos esperar e precisamos atendimento imediato. Preciso de ajuda com esse incidente.,MEDIO,ALTO,teste,SINTETICO
+54,cenario-1-2-2,Varias pessoas do setor estao paradas. Nao podemos esperar e precisamos atendimento imediato. Favor analisar o atendimento.,MEDIO,ALTO,teste,SINTETICO
+55,cenario-2-0-0,Toda a empresa esta sem sistema. Pode ser resolvido na proxima semana. Solicito suporte tecnico.,ALTO,BAIXO,treino,SINTETICO
+56,cenario-2-0-0,Toda a empresa esta sem sistema. Pode ser resolvido na proxima semana. Preciso de ajuda com esse incidente.,ALTO,BAIXO,treino,SINTETICO
+57,cenario-2-0-0,Toda a empresa esta sem sistema. Pode ser resolvido na proxima semana. Favor analisar o atendimento.,ALTO,BAIXO,treino,SINTETICO
+58,cenario-2-0-1,Todos os departamentos estao sem acesso. Nao ha prazo imediato e existe alternativa. Solicito suporte tecnico.,ALTO,BAIXO,validacao,SINTETICO
+59,cenario-2-0-1,Todos os departamentos estao sem acesso. Nao ha prazo imediato e existe alternativa. Preciso de ajuda com esse incidente.,ALTO,BAIXO,validacao,SINTETICO
+60,cenario-2-0-1,Todos os departamentos estao sem acesso. Nao ha prazo imediato e existe alternativa. Favor analisar o atendimento.,ALTO,BAIXO,validacao,SINTETICO
+61,cenario-2-0-2,O servidor central parou para a organizacao inteira. A solicitacao pode aguardar alguns dias. Solicito suporte tecnico.,ALTO,BAIXO,teste,SINTETICO
+62,cenario-2-0-2,O servidor central parou para a organizacao inteira. A solicitacao pode aguardar alguns dias. Preciso de ajuda com esse incidente.,ALTO,BAIXO,teste,SINTETICO
+63,cenario-2-0-2,O servidor central parou para a organizacao inteira. A solicitacao pode aguardar alguns dias. Favor analisar o atendimento.,ALTO,BAIXO,teste,SINTETICO
+64,cenario-2-1-0,Toda a empresa esta sem sistema. Precisamos resolver ate amanha. Solicito suporte tecnico.,ALTO,MEDIO,treino,SINTETICO
+65,cenario-2-1-0,Toda a empresa esta sem sistema. Precisamos resolver ate amanha. Preciso de ajuda com esse incidente.,ALTO,MEDIO,treino,SINTETICO
+66,cenario-2-1-0,Toda a empresa esta sem sistema. Precisamos resolver ate amanha. Favor analisar o atendimento.,ALTO,MEDIO,treino,SINTETICO
+67,cenario-2-1-1,Todos os departamentos estao sem acesso. Ha prazo para o proximo dia util. Solicito suporte tecnico.,ALTO,MEDIO,validacao,SINTETICO
+68,cenario-2-1-1,Todos os departamentos estao sem acesso. Ha prazo para o proximo dia util. Preciso de ajuda com esse incidente.,ALTO,MEDIO,validacao,SINTETICO
+69,cenario-2-1-1,Todos os departamentos estao sem acesso. Ha prazo para o proximo dia util. Favor analisar o atendimento.,ALTO,MEDIO,validacao,SINTETICO
+70,cenario-2-1-2,O servidor central parou para a organizacao inteira. A atividade pode aguardar ate o fim do dia. Solicito suporte tecnico.,ALTO,MEDIO,teste,SINTETICO
+71,cenario-2-1-2,O servidor central parou para a organizacao inteira. A atividade pode aguardar ate o fim do dia. Preciso de ajuda com esse incidente.,ALTO,MEDIO,teste,SINTETICO
+72,cenario-2-1-2,O servidor central parou para a organizacao inteira. A atividade pode aguardar ate o fim do dia. Favor analisar o atendimento.,ALTO,MEDIO,teste,SINTETICO
+73,cenario-2-2-0,Toda a empresa esta sem sistema. Precisamos retomar agora sem alternativa. Solicito suporte tecnico.,ALTO,ALTO,treino,SINTETICO
+74,cenario-2-2-0,Toda a empresa esta sem sistema. Precisamos retomar agora sem alternativa. Preciso de ajuda com esse incidente.,ALTO,ALTO,treino,SINTETICO
+75,cenario-2-2-0,Toda a empresa esta sem sistema. Precisamos retomar agora sem alternativa. Favor analisar o atendimento.,ALTO,ALTO,treino,SINTETICO
+76,cenario-2-2-1,Todos os departamentos estao sem acesso. O prazo vence agora e a operacao esta parada. Solicito suporte tecnico.,ALTO,ALTO,validacao,SINTETICO
+77,cenario-2-2-1,Todos os departamentos estao sem acesso. O prazo vence agora e a operacao esta parada. Preciso de ajuda com esse incidente.,ALTO,ALTO,validacao,SINTETICO
+78,cenario-2-2-1,Todos os departamentos estao sem acesso. O prazo vence agora e a operacao esta parada. Favor analisar o atendimento.,ALTO,ALTO,validacao,SINTETICO
+79,cenario-2-2-2,O servidor central parou para a organizacao inteira. Nao podemos esperar e precisamos atendimento imediato. Solicito suporte tecnico.,ALTO,ALTO,teste,SINTETICO
+80,cenario-2-2-2,O servidor central parou para a organizacao inteira. Nao podemos esperar e precisamos atendimento imediato. Preciso de ajuda com esse incidente.,ALTO,ALTO,teste,SINTETICO
+81,cenario-2-2-2,O servidor central parou para a organizacao inteira. Nao podemos esperar e precisamos atendimento imediato. Favor analisar o atendimento.,ALTO,ALTO,teste,SINTETICO

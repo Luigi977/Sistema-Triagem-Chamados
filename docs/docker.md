@@ -1,6 +1,6 @@
 # Aplicação e Evolution API em Docker
 
-O Compose executa o backend Java, a Evolution API v2.3.7, Redis e dois PostgreSQL separados: um da aplicação e outro da Evolution. A integração fica habilitada nesse ambiente, sem provedor simulado ou carga de chamados/mensagens de demonstração. O frontend principal ainda não foi implementado; a tela administrativa de conexão é servida pelo backend.
+O Compose executa o backend Java, o serviço Python de prioridade, a Evolution API v2.3.7, Redis e dois PostgreSQL separados: um da aplicação e outro da Evolution. A integração WhatsApp fica habilitada nesse ambiente, sem provedor simulado ou carga de chamados/mensagens de demonstração. O frontend React roda separadamente em desenvolvimento; a tela administrativa de conexão é servida pelo backend.
 
 ## Iniciar
 
@@ -11,6 +11,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-stack.ps1
 ```
 
 O parâmetro de política vale somente para esse processo PowerShell, sem mudar a política da máquina. O script gera `.env.docker` na primeira execução com senhas/chaves aleatórias; mantém os mesmos valores nas execuções seguintes. Esse arquivo é ignorado pelo Git e não substitui o `.env` usado pelo backend fora de Docker.
+
+O script também acrescenta `DOCKER_IA_FEEDBACK_TOKEN` a instalações existentes,
+sem alterar os outros segredos. Backend e IA usam essa credencial internamente
+para enviar decisões do técnico ao treinamento. A migração V7 conserva as
+decisões e cria a fila de feedback. `ia/data/learning` e `ia/models` precisam
+ser preservados nas atualizações: contêm os exemplos recebidos e os modelos.
+Veja [Aprendizado contínuo](../ia/APRENDIZADO_CONTINUO.md) para os limiares de
+20 exemplos elegíveis/três grupos de validação e os critérios de ativação.
+
+Para abrir o painel de prioridade, execute `cd frontend`, `npm.cmd ci` e
+`npm.cmd run dev`; acesse `http://localhost:5173`. O proxy usa backend na porta
+8080 por padrão; ajuste `DEV_API_TARGET` em `frontend/.env.local` se necessário.
+Veja o [guia da IA](../ia/README.md) para treinamento e revisão humana.
+`http://localhost:8000/docs` oferece o contrato Python. O modelo sintético não
+é habilitado por padrão, e a análise automática de mensagens exige
+`IA_AUTO_ENABLED=true` após homologação. A matriz funciona com valores informados.
 
 Abra **http://localhost:8080/whatsapp.html**. Entre com `DOCKER_ADMIN_LOGIN` e `DOCKER_ADMIN_PASSWORD`, disponíveis apenas no `.env.docker` local. Clique em **Gerar QR Code** e leia o código no celular do suporte em **WhatsApp → Aparelhos conectados → Conectar aparelho**. A tela consulta o estado real a cada cinco segundos. Não guarda tokens no armazenamento do navegador nem recebe a chave da Evolution.
 

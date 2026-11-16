@@ -1,0 +1,20 @@
+{
+  "registros": 108091,
+  "reais": 83,
+  "sinteticos": 108008,
+  "particoes_generalizados": {
+    "treino": 53,
+    "teste": 14,
+    "validacao": 16
+  },
+  "revisao_humana": "PENDENTE",
+  "homologado": false,
+  "tratamento": "Relatos reescritos e generalizados por IA; não são transcrições.",
+  "grupos": "Contato removido; generalizados agrupados somente por partição.",
+  "limite": "Revisão automática não certifica anonimato nem autorização de publicação.",
+  "arquivos_sha256": {
+    "relatos-generalizados.csv": "2d15a305e52c6ee755f2b2c12e1f79bc4009404dc21c721fbebab729fd41df87",
+    "tabela-publica.xlsx": "0c3ec965f2457eeb77aa237e7939f52945a8a3147000d304a87ef5d0cfa5d8be",
+    "treinamento-publico.csv": "3ec4a55075025726b88301fb2d7f257366b4dc7a6571607fe3e874d2e3fad42c"
+  }
+}

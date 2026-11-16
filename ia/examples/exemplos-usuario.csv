@@ -1,0 +1,9 @@
+id,grupo,texto,impacto,urgencia,particao,origem,prioridade,rotulador
+usuario-001,usuario-servidor-principal,Servidor principal caiu e toda a empresa está parada,ALTO,ALTO,treino,SINTETICO,CRITICA,USUARIO
+usuario-002,usuario-fechamento-financeiro,Sistema financeiro indisponível durante o fechamento mensal,ALTO,ALTO,treino,SINTETICO,CRITICA,USUARIO
+usuario-003,usuario-relatorio-diretor,Computador do diretor não liga e ele precisa apresentar um relatório hoje,MEDIO,ALTO,treino,SINTETICO,ALTA,USUARIO
+usuario-004,usuario-impressora-setor,Impressora de um setor está sem funcionar,MEDIO,MEDIO,treino,SINTETICO,MEDIA,USUARIO
+usuario-005,usuario-computador-lento,"Meu computador está lento, mas consigo trabalhar",BAIXO,BAIXO,treino,SINTETICO,BAIXA,USUARIO
+usuario-006,usuario-programa-proxima-semana,Preciso instalar um programa para utilizar na próxima semana,BAIXO,BAIXO,treino,SINTETICO,BAIXA,USUARIO
+usuario-007,usuario-rede-alternativa,"Rede de um departamento está indisponível, mas existe conexão alternativa",MEDIO,MEDIO,treino,SINTETICO,MEDIA,USUARIO
+usuario-008,usuario-arquivo-reuniao,Preciso recuperar um arquivo importante antes de uma reunião,MEDIO,ALTO,treino,SINTETICO,ALTA,USUARIO
